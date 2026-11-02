@@ -1,6 +1,6 @@
 // Réseau d'abord : chaque ouverture charge la dernière version publiée sur GitHub.
 // Sans réseau : la dernière version gardée en cache s'ouvre quand même.
-const CACHE = "batterie-opzs-v3";
+const CACHE = "batterie-opzs-v7";
 const SHELL = ["./", "./index.html", "./manifest.json", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
