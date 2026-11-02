@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Batterie OPzS</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Batterie">
+<meta name="theme-color" content="#0e1614">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Appli mobile plein écran : en-tête compact, contenu défilant, barre d'onglets en bas (style iOS) */
+:root{
+  --bg:#0e1614; --card:#17221f; --card2:#1e2c28; --line:#2a3a36; --fg:#eef3f1; --muted:#8fa19c;
+  --accent:#e8904f; --accent-dim:rgba(232,144,79,.16); --second:#63b4d4; --ok:#5ccb8a; --warn:#e6b345; --crit:#ef6b5e;
+  --bar:rgba(14,22,20,.82);
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --fr:ui-rounded,-apple-system,"SF Pro Rounded",system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root{
+  --bg:#f2f4f3; --card:#ffffff; --card2:#f6f8f7; --line:#dfe5e3; --fg:#13201c; --muted:#5d6d68;
+  --accent:#c06a2c; --accent-dim:rgba(192,106,44,.12); --second:#2b6f8a; --ok:#2f8a55; --warn:#a97810; --crit:#c23b30;
+  --bar:rgba(248,250,249,.86); color-scheme:light}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+body{display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
+.num{font-variant-numeric:tabular-nums}
+header{flex:none;padding:calc(env(safe-area-inset-top) + 8px) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg)}
+header h1{font:700 28px/1.1 var(--f);margin:0;letter-spacing:-.02em}
+.meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:3px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 2s infinite}
+.dot.off{background:var(--muted);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(92,203,138,.5)}70%{box-shadow:0 0 0 7px rgba(92,203,138,0)}100%{box-shadow:0 0 0 0 rgba(92,203,138,0)}}
+.ibtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--card);color:var(--fg);display:grid;place-items:center;cursor:pointer;flex:none}
+.ibtn svg{width:22px;height:22px}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 max(16px,env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));position:relative}
+.ptr{height:0;overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:12px;transition:height .2s}
+.view{display:none;flex-direction:column;gap:14px;animation:in .25s ease}
+.view.on{display:flex}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border-radius:18px;padding:16px}
+.lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.demo{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+/* jauge */
+.hero{display:grid;place-items:center;padding:18px 16px 14px}
+.ring{position:relative;width:min(240px,64vw);aspect-ratio:1;max-width:100%}
+.ring svg{width:100%;height:100%;transform:rotate(135deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.soc{font:700 64px/1 var(--fr);letter-spacing:-.03em}
+.soc small{font-size:24px;color:var(--muted);margin-left:2px}
+.ring .lbl{font-size:11px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.chip{font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--card2);display:flex;align-items:center;gap:6px}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border-radius:16px;padding:14px}
+.tile .v{font:600 26px/1.15 var(--fr);margin-top:6px}
+.tile .v small{font-size:15px;color:var(--muted);font-weight:500}
+.ttg .bar{height:8px;border-radius:4px;background:var(--card2);margin-top:12px;position:relative;overflow:hidden}
+.ttg .bar b{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--accent),var(--ok));border-radius:4px}
+.ttg .row{display:flex;justify-content:space-between;align-items:baseline}
+.ttg .big{font:600 26px var(--fr)}
+.list .it{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.list .it:last-child{border-bottom:0}
+.list .k{color:var(--muted);font-size:15px;min-width:0}
+.list .k small{display:block;font-size:12px;margin-top:2px;opacity:.85}
+.list .v{font:600 17px var(--fr);white-space:nowrap;text-align:right}
+.pos{color:var(--ok)} .neg{color:var(--accent)} .bad{color:var(--crit)}
+/* tendances */
+.seg{display:flex;background:var(--card2);border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:none;color:var(--fg);font:600 13px var(--f);padding:7px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.picks{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.picks::-webkit-scrollbar{display:none}
+.pk{flex:none;border:1.5px solid var(--line);background:none;color:var(--fg);font:600 13px var(--f);padding:7px 12px;border-radius:999px;cursor:pointer}
+.pk.a1{border-color:var(--accent);background:var(--accent-dim)}
+.pk.a2{border-color:var(--second);background:rgba(99,180,212,.14)}
+.chartbox{position:relative;touch-action:pan-y}
+.chartbox svg{width:100%;height:auto;display:block}
+.tip{position:absolute;top:0;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:12px;white-space:nowrap;pointer-events:none;display:none}
+/* bilan */
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;margin-top:12px;background:var(--card2)}
+.stack b{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.big2{font:700 34px/1.1 var(--fr);margin-top:4px}
+/* barre d'onglets */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
+  background:var(--bar);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid var(--line);z-index:5}
+nav.tabs button{flex:1;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font:600 10.5px var(--f);cursor:pointer;padding:2px 0}
+nav.tabs svg{width:25px;height:25px}
+nav.tabs button[aria-selected="true"]{color:var(--accent)}
+/* feuille réglages */
+.sheet{position:fixed;inset:0;z-index:20;display:none}
+.sheet.on{display:block}
+.sheet .bd{position:absolute;inset:0;background:rgba(0,0,0,.45);animation:fade .2s}
+.sheet .pn{position:absolute;left:0;right:0;bottom:0;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:22px 22px 0 0;
+  padding:8px max(16px,env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));animation:up .28s cubic-bezier(.2,.9,.3,1);display:flex;flex-direction:column;gap:14px}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 2px}
+.sheet h2{margin:0;font:700 22px var(--f)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}}
+.al{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.al:last-child{border-bottom:0}
+.al .k small{display:block;font-size:12px;color:var(--muted)}
+.st{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(92,203,138,.15);color:var(--ok);white-space:nowrap}
+.st.trig{background:rgba(239,107,94,.15);color:var(--crit)}
+.note{font-size:12px;color:var(--muted);line-height:1.45;margin:0}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="title">Statut</h1>
+    <div class="meta"><span class="dot" id="dot"></span><span id="upd" class="num">—</span></div>
+  </div>
+  <button class="ibtn" id="openSet" aria-label="Réglages et alarmes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+  <div class="ptr" id="ptr">Relâcher pour actualiser</div>
+
+  <!-- STATUT -->
+  <section class="view on" id="v-statut">
+    <div class="card hero">
+      <div class="ring">
+        <svg viewBox="0 0 200 200"><circle id="rTrack" cx="100" cy="100" r="86" fill="none" stroke-width="14" stroke-linecap="round"/>
+          <circle id="rVal" cx="100" cy="100" r="86" fill="none" stroke-width="14" stroke-linecap="round" style="transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)"/>
+          <circle id="rMark" r="4"/></svg>
+        <div class="c"><div class="soc num"><span id="soc">—</span><small>%</small></div><div class="lbl" id="socLbl">État de charge</div></div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">Tension</div><div class="v num" id="tV">—</div></div>
+      <div class="tile"><div class="lbl">Courant</div><div class="v num" id="tI">—</div></div>
+      <div class="tile"><div class="lbl">Puissance</div><div class="v num" id="tP">—</div></div>
+      <div class="tile"><div class="lbl">Ah consommés</div><div class="v num" id="tAh">—</div></div>
+    </div>
+    <div class="card ttg">
+      <div class="row"><span class="lbl">Avant le seuil de 50 %</span><span class="big num" id="ttg">—</span></div>
+      <div class="bar"><b id="ttgBar"></b></div>
+      <p class="note" style="margin-top:8px" id="ttgNote"></p>
+    </div>
+    <div class="card list">
+      <div class="lbl" style="margin-bottom:4px">Tension au repos ce matin</div>
+      <div class="it"><span class="k">Avant le lever du soleil<small id="restSub">—</small></span><span class="v num" id="restSoc">—</span></div>
+      <div class="it"><span class="k">Écart SOC shunt / table Exide</span><span class="v num" id="restGap">—</span></div>
+    </div>
+  </section>
+
+  <!-- TENDANCES -->
+  <section class="view" id="v-tend">
+    <div class="seg" id="range"><button data-h="6" aria-pressed="false">6 h</button><button data-h="12" aria-pressed="false">12 h</button><button data-h="24" aria-pressed="true">24 h</button></div>
+    <div class="card">
+      <div class="picks" id="picks"></div>
+      <div class="chartbox" id="cbox"><svg id="chart" viewBox="0 0 360 230"></svg><div class="tip" id="tip"></div></div>
+      <p class="note">Touchez une courbe pour lire les valeurs. Premier choix = cuivre, second = bleu.</p>
+    </div>
+  </section>
+
+  <!-- BILAN -->
+  <section class="view" id="v-bilan">
+    <div class="card">
+      <div class="lbl" id="bDate">Bilan</div>
+      <div class="big2 num" id="bNet">—</div>
+      <div class="note" id="bSoc"></div>
+      <div class="stack" id="bStack"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Gospower</span><span><i style="background:var(--second)"></i>Apollo</span></div>
+    </div>
+    <div class="card list" id="bList"></div>
+  </section>
+
+  <!-- HISTORIQUE -->
+  <section class="view" id="v-histo">
+    <div class="lbl">Décharge</div>
+    <div class="tiles" id="h1"></div>
+    <div class="lbl">Énergie depuis la pose</div>
+    <div class="tiles" id="h2"></div>
+    <div class="lbl">Charge</div>
+    <div class="tiles" id="h3"></div>
+    <div class="lbl">Tension et alarmes</div>
+    <div class="tiles" id="h4"></div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-v="statut" data-t="Statut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="4" width="12" height="17" rx="2.5"/><path d="M10 2.5h4"/><rect x="8.5" y="11" width="7" height="7.5" rx="1" fill="currentColor" stroke="none"/></svg>Statut</button>
+  <button role="tab" aria-selected="false" data-v="tend" data-t="Tendances"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-7 4 4"/><path d="M3 21h18"/></svg>Tendances</button>
+  <button role="tab" aria-selected="false" data-v="bilan" data-t="Bilan 24 h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Bilan</button>
+  <button role="tab" aria-selected="false" data-v="histo" data-t="Historique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Historique</button>
+</nav>
+
+<div class="sheet" id="sheet">
+  <div class="bd" id="bd"></div>
+  <div class="pn">
+    <div class="grab"></div>
+    <h2>Réglages et alarmes</h2>
+    <div class="card"><div class="lbl" style="margin-bottom:4px">Alarmes</div><div id="alList"></div></div>
+    <div class="card list"><div class="lbl" style="margin-bottom:4px">Paramètres du shunt (lecture seule)</div><div id="setList"></div></div>
+    <p class="note">L'ESP32 reçoit les mesures du shunt mais ne peut pas modifier ses réglages. Synchronisation à 100 %, calibration du zéro et changements se font dans VictronConnect, sur place.</p>
+    <button class="ibtn" id="closeSet" style="width:100%;border-radius:12px;height:46px;font:600 16px var(--f)">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ======= CONFIGURATION =======
+const DATA_URL = "";        // URL JSON de la feuille Google (Apps Script) — vide = données d'exemple
+const CAP = 1530, FLOOR = 50;
+// =============================
+
+const $ = id => document.getElementById(id);
+const fr = (v, d = 0) => Number(v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sg = (v, d = 0) => (v > 0 ? "+" : v < 0 ? "−" : "") + fr(Math.abs(v), d);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pad2 = n => String(n).padStart(2, "0");
+const dt = iso => { const d = new Date(iso); return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+
+function demo() {
+  const serie = []; let s = 86; const t0 = new Date(); t0.setHours(0,0,0,0);
+  for (let k = 0; k < 288; k++) {
+    const h = k / 12; let c;
+    if (h < 6.2) c = -(h < 2 ? 14 : 5.5);
+    else if (h < 16.5) { const sn = Math.sin(Math.PI * (h - 6.2) / 10.3); c = Math.max(-25, 110 * sn - (h > 10 && h < 14 ? 35 : 8)); if (h > 9.8 && h < 14) c = Math.min(c, h > 12 ? 6 : 16); }
+    else c = -(h < 17 ? 6 : 14);
+    s = Math.min(100, s + c * (5/60) / CAP * 100 * (c > 0 ? .9 : 1));
+    const vr = 47.45 + .025 * s, v = c > 0 ? Math.min(56.4, vr + 2 + .05 * c) : vr + .004 * c;
+    serie.push({ t: t0.getTime() + k * 300000, soc: s, i: c, v });
+  }
+  return { demo: true, updatedAt: new Date().toISOString(), soc: 88, v: 50.12, i: -6.2, p: -311, ah: -184, alarmes: [],
+    rest: { v: 49.67, kw: .27, soc: 88 },
+    bilan: { date: "01/11/2026", pvTotal: 12.86, pv1: 8.48, pv2: 4.37, conso: 11.47, chargeShunt: 7.92, chargeGospower: 4.76, dechargeShunt: 5.61, soc0: 86, soc1: 88 },
+    histo: { plusProfonde: -412, derniere: -226, moyenne: -241, cumulAh: -3618, kWhDech: 178.4, kWhCharge: 201.9, cycles: 15, depuisPleine: "8 h 40", sync: 14, dechComplete: 0, vMin: 48.62, vMax: 56.48, alBasse: 0, alHaute: 0 },
+    serie };
+}
+
+let D = null;
+async function load() {
+  if (!DATA_URL) { D = demo(); render(); return; }
+  try {
+    const r = await fetch(DATA_URL, { cache: "no-store" }); D = await r.json();
+    try { localStorage.setItem("opzs", JSON.stringify(D)); } catch (e) {}
+  } catch (e) {
+    try { D = JSON.parse(localStorage.getItem("opzs")); D.offline = true; } catch (_) { D = demo(); }
+    if (!D) D = demo();
+  }
+  render();
+}
+
+function render() {
+  const d = D;
+  $("upd").textContent = (d.offline ? "Hors ligne · " : "") + "Mis à jour " + dt(d.updatedAt);
+  $("dot").className = "dot" + (d.offline ? " off" : "");
+  // anneau
+  const C = 2 * Math.PI * 86, arc = .75 * C;
+  const tr = $("rTrack"), rv = $("rVal"), mk = $("rMark");
+  tr.setAttribute("stroke", css("--card2")); tr.setAttribute("stroke-dasharray", `${arc} ${C}`);
+  const bad = d.soc < FLOOR;
+  rv.setAttribute("stroke", bad ? css("--crit") : css("--accent"));
+  rv.setAttribute("stroke-dasharray", `${arc} ${C}`);
+  rv.setAttribute("stroke-dashoffset", arc);
+  requestAnimationFrame(() => requestAnimationFrame(() => rv.setAttribute("stroke-dashoffset", arc * (1 - d.soc / 100))));
+  const a = .75 * 2 * Math.PI * .5; mk.setAttribute("cx", 100 + 86 * Math.cos(a)); mk.setAttribute("cy", 100 + 86 * Math.sin(a)); mk.setAttribute("fill", css("--fg"));
+  $("soc").textContent = fr(d.soc);
+  $("socLbl").textContent = "État de charge";
+  const st = d.i > .5 ? ["Charge", "--ok"] : d.i < -.5 ? ["Décharge", "--accent"] : ["Repos", "--muted"];
+  const al = (d.alarmes || []).length;
+  $("chips").innerHTML = `<span class="chip" style="color:var(${st[1]})"><i></i>${st[0]}</span>
+    <span class="chip" style="color:var(${bad ? "--crit" : "--ok"})"><i></i>${bad ? "Sous 50 %" : "Au-dessus de 50 %"}</span>
+    <span class="chip" style="color:var(${al ? "--crit" : "--ok"})"><i></i>${al ? al + " alarme" + (al > 1 ? "s" : "") : "Aucune alarme"}</span>` + (d.demo ? '<span class="chip" style="background:var(--accent);color:#fff;letter-spacing:.06em">EXEMPLE</span>' : "");
+  $("tV").innerHTML = `${fr(d.v, 2)}<small> V</small>`;
+  $("tI").innerHTML = `<span class="${d.i < 0 ? "neg" : "pos"}">${sg(d.i, 1)}</span><small> A</small>`;
+  $("tP").innerHTML = `<span class="${d.p < 0 ? "neg" : "pos"}">${sg(d.p)}</span><small> W</small>`;
+  $("tAh").innerHTML = `${sg(d.ah)}<small> Ah</small>`;
+  const marge = Math.max(0, (d.soc - FLOOR) / 100 * CAP);
+  $("ttg").textContent = d.i < -.5 ? fr(marge / -d.i) + " h" : "—";
+  $("ttgBar").style.width = Math.max(0, Math.min(100, (d.soc - FLOOR) * 2)) + "%";
+  $("ttgNote").textContent = `${fr(marge)} Ah disponibles avant 50 %` + (d.i < -.5 ? ` au courant actuel de ${fr(-d.i, 1)} A.` : ".");
+  if (d.rest) {
+    $("restSub").textContent = `${fr(d.rest.v, 2)} V à ${fr(d.rest.kw, 2)} kW`;
+    $("restSoc").textContent = "≈ " + fr(d.rest.soc) + " %";
+    const g = d.soc - d.rest.soc; $("restGap").textContent = sg(g) + " pt"; $("restGap").className = "v num " + (Math.abs(g) > 5 ? "bad" : "pos");
+  }
+  // bilan
+  const b = d.bilan;
+  if (b) {
+    const ap = b.chargeShunt - b.chargeGospower, net = b.chargeShunt - b.dechargeShunt;
+    $("bDate").textContent = "Bilan du " + b.date + (d.demo ? " · exemple" : "");
+    $("bNet").innerHTML = `<span class="${net >= 0 ? "pos" : "neg"}">${sg(net, 2)} kWh</span>`;
+    $("bSoc").textContent = `Net batterie · SOC ${fr(b.soc0)} % → ${fr(b.soc1)} % (06:00 → 06:00)`;
+    $("bStack").innerHTML = `<b style="width:${b.chargeGospower / b.chargeShunt * 100}%;background:var(--accent)"></b><b style="width:${ap / b.chargeShunt * 100}%;background:var(--second)"></b>`;
+    const R = (k, v, s, c) => `<div class="it"><span class="k">${k}${s ? `<small>${s}</small>` : ""}</span><span class="v num ${c || ""}">${v}</span></div>`;
+    $("bList").innerHTML =
+      R("PV Gospower", fr(b.pvTotal ?? b.pv1 + b.pv2, 2) + " kWh", `PV1 ${fr(b.pv1, 2)} + PV2 ${fr(b.pv2, 2)}`) +
+      R("Consommation", fr(b.conso, 2) + " kWh", "Gospower") +
+      R("Charge batterie", fr(b.chargeShunt, 2) + " kWh", "SmartShunt, toutes sources", "pos") +
+      R("dont Gospower", fr(b.chargeGospower, 2) + " kWh") +
+      R("dont Apollo", fr(ap, 2) + " kWh", "charge shunt − charge Gospower") +
+      R("Décharge batterie", fr(b.dechargeShunt, 2) + " kWh", "SmartShunt", "neg");
+  }
+  // historique
+  const h = d.histo, T = (k, v, u) => `<div class="tile"><div class="lbl">${k}</div><div class="v num">${v}${u ? `<small> ${u}</small>` : ""}</div></div>`;
+  if (h) {
+    $("h1").innerHTML = T("Plus profonde", sg(h.plusProfonde), "Ah") + T("Dernière", sg(h.derniere), "Ah") + T("Moyenne", sg(h.moyenne), "Ah") + T("Cumul", sg(h.cumulAh), "Ah");
+    $("h2").innerHTML = T("Déchargée", fr(h.kWhDech, 1), "kWh") + T("Chargée", fr(h.kWhCharge, 1), "kWh");
+    $("h3").innerHTML = T("Cycles", fr(h.cycles)) + T("Depuis pleine", h.depuisPleine) + T("Synchronisations", fr(h.sync)) + T("Décharges complètes", fr(h.dechComplete));
+    $("h4").innerHTML = T("Tension mini", fr(h.vMin, 2), "V") + T("Tension maxi", fr(h.vMax, 2), "V") + T("Alarmes basse", h.alBasse) + T("Alarmes haute", h.alHaute);
+  }
+  // réglages + alarmes
+  const A = [["SOC bas", "déclenche à 50 %, retombe à 55 %"], ["Tension avant lever", "< 48,7 V corrigée (table Exide)"], ["Tension basse", "< 48,0 V (coupure Gospower 47 V)"],
+    ["Tension élevée", "> 57,0 V hors égalisation, > 57,8 V toujours"], ["Absorption non atteinte", "aucune synchronisation à 100 % dans la journée"], ["Shunt muet", "aucune mesure depuis 30 min"]];
+  $("alList").innerHTML = A.map(([k, s]) => { const on = (d.alarmes || []).includes(k); return `<div class="al"><span class="k">${k}<small>${s}</small></span><span class="st ${on ? "trig" : ""}">${on ? "Déclenchée" : "OK"}</span></div>`; }).join("");
+  const P = [["Capacité", "1530 Ah", "C20 via rapport Victron OPzS Solar"], ["Tension chargée", "53,3 V", "float 53,6 V − 0,3 V"], ["Seuil de décharge", "50 %"], ["Courant de queue", "2,0 %"],
+    ["Détection batterie chargée", "3 min"], ["Exposant de Peukert", "1,13", "C10 / C20"], ["Rendement de charge", "90 %"], ["Seuil de courant", "0,10 A"], ["SOC au redémarrage", "Garder SOC"]];
+  $("setList").innerHTML = P.map(([k, v, s]) => `<div class="it"><span class="k">${k}${s ? `<small>${s}</small>` : ""}</span><span class="v num">${v}</span></div>`).join("");
+  chart();
+}
+
+// ======= graphique tactile =======
+const SER = { soc: ["SOC", "%", 0, s => s.soc], v: ["Tension", "V", 2, s => s.v], i: ["Courant", "A", 1, s => s.i], p: ["Puissance", "W", 0, s => s.v * s.i], ah: ["Ah consommés", "Ah", 0, s => (s.soc - 100) / 100 * CAP] };
+let pick = ["soc", "i"], hours = 24;
+function picks() {
+  $("picks").innerHTML = Object.entries(SER).map(([k, s]) => `<button class="pk ${pick[0] === k ? "a1" : pick[1] === k ? "a2" : ""}" data-k="${k}">${s[0]}</button>`).join("");
+}
+$("picks").addEventListener("click", e => {
+  const k = e.target.dataset && e.target.dataset.k; if (!k) return;
+  if (pick[0] === k) { if (pick[1]) pick = [pick[1], null]; }
+  else if (pick[1] === k) pick = [pick[0], null];
+  else pick = [pick[0], k];
+  picks(); chart();
+});
+function scale(min, max) {
+  const span = max - min || 1, step = [.1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000].find(x => span / x <= 4) || 5000;
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, t = [];
+  for (let v = lo; v <= hi + 1e-9; v += step) t.push(+v.toFixed(2)); return { lo, hi, t };
+}
+let geo = null;
+function chart() {
+  if (!D || !D.serie) return;
+  picks();
+  const svg = $("chart"), W = 360, H = 230, L = 40, R = 320, Tp = 12, B = 200;
+  const S = D.serie.slice(-hours * 12), n = S.length, X = k => L + (R - L) * k / (n - 1);
+  let out = "", Ys = [];
+  pick.forEach((key, idx) => {
+    if (!key) return;
+    const [nm, u, dec, f] = SER[key], col = idx ? css("--second") : css("--accent"), vals = S.map(f), sc = scale(Math.min(...vals), Math.max(...vals));
+    const Y = v => B - (B - Tp) * (v - sc.lo) / (sc.hi - sc.lo); Ys[idx] = { Y, vals, u, dec, col };
+    sc.t.forEach(v => {
+      if (!idx) out += `<line x1="${L}" x2="${R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--line")}" stroke-width="1"/>`;
+      out += `<text x="${idx ? R + 5 : L - 5}" y="${Y(v) + 3.5}" text-anchor="${idx ? "start" : "end"}" font-size="10" fill="${col}">${fr(v, v % 1 ? 1 : 0)}</text>`;
+    });
+    const d = vals.map((v, k) => `${k ? "L" : "M"}${X(k).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
+    if (!idx) { const base = sc.lo < 0 && sc.hi > 0 ? Y(0) : B; out += `<path d="${d} L${R} ${base} L${L} ${base}Z" fill="${col}" fill-opacity=".14"/>`; }
+    out += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
+    out += `<circle cx="${X(n - 1)}" cy="${Y(vals[n - 1])}" r="3.5" fill="${col}"/>`;
+  });
+  for (let q = 0; q <= 4; q++) { const k = Math.round((n - 1) * q / 4), t = new Date(S[k].t); out += `<text x="${X(k)}" y="${B + 18}" text-anchor="middle" font-size="10" fill="${css("--muted")}">${pad2(t.getHours())}:${pad2(t.getMinutes())}</text>`; }
+  out += `<line id="cur" y1="${Tp}" y2="${B}" stroke="${css("--fg")}" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>`;
+  svg.innerHTML = out; geo = { L, R, n, X, S, Ys, W };
+}
+function scrub(ev) {
+  if (!geo) return; const box = $("cbox").getBoundingClientRect(), p = ev.touches ? ev.touches[0] : ev;
+  const x = (p.clientX - box.left) / box.width * geo.W, k = Math.max(0, Math.min(geo.n - 1, Math.round((x - geo.L) / (geo.R - geo.L) * (geo.n - 1))));
+  const cx = geo.X(k), cur = $("cur"); cur.setAttribute("x1", cx); cur.setAttribute("x2", cx); cur.setAttribute("visibility", "visible");
+  const t = new Date(geo.S[k].t), tip = $("tip");
+  tip.innerHTML = `<b>${pad2(t.getHours())}:${pad2(t.getMinutes())}</b> · ` + geo.Ys.filter(Boolean).map(y => `<span style="color:${y.col}">${fr(y.vals[k], y.dec)} ${y.u}</span>`).join(" · ");
+  tip.style.display = "block"; tip.style.left = Math.max(70, Math.min(box.width - 70, cx / geo.W * box.width)) + "px";
+}
+function unscrub() { $("tip").style.display = "none"; const c = $("cur"); c && c.setAttribute("visibility", "hidden"); }
+["touchstart", "touchmove", "mousemove"].forEach(e => $("cbox").addEventListener(e, scrub, { passive: true }));
+["touchend", "mouseleave"].forEach(e => $("cbox").addEventListener(e, unscrub));
+$("range").addEventListener("click", e => { const h = e.target.dataset.h; if (!h) return; hours = +h; [...$("range").children].forEach(b => b.setAttribute("aria-pressed", b === e.target)); chart(); });
+
+// ======= navigation =======
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + b.dataset.v));
+  $("title").textContent = b.dataset.t; $("main").scrollTop = 0; if (b.dataset.v === "tend") chart();
+}));
+$("openSet").onclick = () => $("sheet").classList.add("on");
+$("closeSet").onclick = $("bd").onclick = () => $("sheet").classList.remove("on");
+
+// ======= tirer pour actualiser =======
+let y0 = null; const M = $("main"), ptr = $("ptr");
+M.addEventListener("touchstart", e => { y0 = M.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+M.addEventListener("touchmove", e => { if (y0 === null) return; const dy = e.touches[0].clientY - y0; ptr.style.height = Math.min(60, Math.max(0, dy * .5)) + "px"; }, { passive: true });
+M.addEventListener("touchend", () => { if (y0 !== null && parseFloat(ptr.style.height) >= 50) { ptr.textContent = "Actualisation…"; load().then(() => { ptr.style.height = "0"; ptr.textContent = "Relâcher pour actualiser"; }); } else ptr.style.height = "0"; y0 = null; });
+
+// ======= démarrage =======
+load();
+setInterval(load, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", render);
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
