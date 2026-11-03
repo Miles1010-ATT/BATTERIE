@@ -285,6 +285,7 @@ const DATA_URL = "https://script.google.com/macros/s/AKfycbzGNlzNaV2Qid4YNQdSIVx
 const CAP = 1530, FLOOR = 50;
 // Tarif Jirama résidentiel « Confort » (tarif 25, puissance souscrite ≤ 6,6 kW) — grille ORE/Jirama 06/2021
 // T1 ≤ 130 kWh : 370 Ar · T2 ≤ 300 kWh : 600 Ar · T3 > 300 kWh : 909 Ar · prime fixe 3 140 Ar/kW/mois · redevance 10 000 Ar/mois
+const EUR = 5050;                 // Ar pour 1 € (Wise, 03/11/2026)
 const JIRAMA = { nom: "Confort (tarif 25)", tranches: [[130, 370], [300, 600], [Infinity, 909]], primeFixe: 3140, psKW: 6, redevance: 10000 };
 // =========================
 
@@ -628,40 +629,38 @@ function factureParts(kWh) {
 }
 function factureJirama(kWh) { return Math.round(factureParts(kWh).reduce((a, p) => a + p.v, 0)); }
 const ar = v => fr(Math.round(v / 100) * 100) + " Ar";
-function trancheTxt(k, parJour, mm, yy) {
+function trancheTxt(k) {
   const T = JIRAMA.tranches, i = T.findIndex(([haut]) => k < haut), prix = T[i][1];
-  if (i === T.length - 1) return `Tranche <b>T${i + 1}</b> atteinte : chaque kWh en plus coûte <b class="n">${prix} Ar</b> (les ${fr(T[0][0])} premiers restent à ${T[0][1]} Ar, la suite jusqu’à ${fr(T[1][0])} à ${T[1][1]} Ar).`;
-  const reste = T[i][0] - k, j = parJour > 0 ? Math.ceil(reste / parJour) : null, d = j != null ? new Date(Date.now() + j * 864e5) : null;
-  const dans = d && d.getMonth() + 1 === mm ? ` vers le ${String(d.getDate()).padStart(2, "0")}/${String(mm).padStart(2, "0")}` : " (pas ce mois-ci au rythme actuel)";
-  return `Tranche <b>T${i + 1}</b> : les kWh coûtent <b class="n">${prix} Ar</b>. Passage en T${i + 2} (${T[i + 1][1]} Ar/kWh) dans <b class="n">${fr(reste)} kWh</b>${dans}. Seuls les kWh au-delà du seuil sont facturés plus cher.`;
+  if (i === T.length - 1) return `Tranche <b>T${i + 1}</b> atteinte : chaque kWh en plus coûte <b class="n">${prix} Ar</b>.`;
+  return `Tu es en tranche <b>T${i + 1}</b> : tes kWh coûtent <b class="n">${prix} Ar</b>. Encore <b class="n">${fr(T[i][0] - k, 1)} kWh</b> avant la T${i + 2} (${T[i + 1][1]} Ar/kWh). Seuls les kWh au-delà du seuil sont facturés plus cher.`;
 }
 function compteurHTML() {
   const c = D.compteur; if (!c) return "";
-  const [mm, yy] = c.moisNom.split("/").map(Number), jm = new Date(yy, mm, 0).getDate(), parJour = c.mois / Math.max(1, c.joursMois), proj = parJour * jm;
-  const PM = c.parMois || {}, fiable = c.joursMois >= 7;
+  const PM = c.parMois || {}, ab = JIRAMA.primeFixe * JIRAMA.psKW + JIRAMA.redevance;
+  const nrj = kWh => factureJirama(kWh) - ab;                                       // partie énergie seule (tranches)
   let h = card("Compteur du mois", compteurReel(c.mois, D.live ? D.live.maison : null, "Maison · " + moisFr(c.moisNom)) +
-    `<div class="odo-s">kWh consommés depuis le 1er du mois · sortie de l’onduleur</div>` +
-    sep(tiles([tile("Aujourd’hui", fr(c.aujourdhui, 1), "kWh", "bl", "depuis 00:00"), tile("Par jour", fr(parJour, 1), "kWh", "bl", `moyenne sur ${c.joursMois} j`), tile("Index total", fr(c.index, 0), "kWh", "", "depuis le " + c.depuis)])) +
-    sep(tiles([tile("Mois précédent", c.moisPrec == null ? "—" : fr(c.moisPrec, 0), c.moisPrec == null ? "" : "kWh", "", c.moisPrec == null ? "pas encore de données" : moisFr(c.moisPrecNom)), tile("Année " + c.anneeNom, fr(c.annee, 0), "kWh", "", "depuis le " + c.depuis)], 2)) +
-    sep(gh(moisFr(c.moisNom) + " face aux tranches Jirama", "kWh/mois") +
-      jauge({ id: "jt", min: 0, max: Math.max(400, Math.ceil(Math.max(proj, c.moisPrec || 0) * 1.12 / 50) * 50), zones: [[0, 130, "ok", "370 Ar"], [130, 300, "warn", "600 Ar"], [300, 1e6, "crit", "909 Ar"]],
+    `<div class="odo-s">kWh réellement consommés depuis le 1er du mois · mesurés à la sortie de l’onduleur</div>` +
+    sep(tiles([tile("Aujourd’hui", fr(c.aujourdhui, 1), "kWh", "bl", "depuis 00:00"), tile("Ce mois", fr(c.mois, 1), "kWh", "bl", `${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} mesuré${c.joursMois > 1 ? "s" : ""}`), tile("Index total", fr(c.index, 1), "kWh", "", "depuis le " + c.depuis)])) +
+    sep(tiles([tile("Mois précédent", c.moisPrec == null ? "—" : fr(c.moisPrec, 1), c.moisPrec == null ? "" : "kWh", "", c.moisPrec == null ? "pas de données" : moisFr(c.moisPrecNom)), tile("Année " + c.anneeNom, fr(c.annee, 1), "kWh", "", "depuis le " + c.depuis)], 2)) +
+    sep(gh(moisFr(c.moisNom) + " face aux tranches Jirama", "kWh consommés") +
+      jauge({ id: "jt", min: 0, max: Math.max(400, Math.ceil(Math.max(c.mois, c.moisPrec || 0) * 1.12 / 50) * 50), zones: [[0, 130, "ok", "370 Ar"], [130, 300, "warn", "600 Ar"], [300, 1e6, "crit", "909 Ar"]],
         ticks: [{ v: 0, t: "0" }, { v: 130, t: "130" }, { v: 300, t: "300" }],
-        marks: [{ v: c.mois, t: "auj. " + fr(c.mois), col: "fg" }, { v: proj, t: "fin ≈ " + fr(proj), col: "acc" }].concat(c.moisPrec != null ? [{ v: c.moisPrec, t: "préc. " + fr(c.moisPrec), col: "blue" }] : []) }) +
-      gcap(trancheTxt(c.mois, parJour, mm, yy)) +
-      gcap(fiable ? `Projection au rythme de ${fr(parJour, 1)} kWh/jour sur ${jm} jours.` : `Projection encore peu fiable : ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} de données (journée en cours comprise). Elle se stabilise après une semaine.`)));
-  // année mois par mois
+        marks: [{ v: c.mois, t: "ce mois " + fr(c.mois, 1), col: "fg" }].concat(c.moisPrec != null ? [{ v: c.moisPrec, t: "préc. " + fr(c.moisPrec), col: "blue" }] : []) }) +
+      gcap(trancheTxt(c.mois))));
+  // année mois par mois (réel uniquement)
   const mois = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0") + "/" + c.anneeNom);
-  const v = mois.map(m => PM[m] != null ? PM[m] : null), gh2 = mois.map(m => m === c.moisNom ? proj : null);
-  h += card("Année " + c.anneeNom + " mois par mois", vbars({ v, ghost: gh2, lab: "JFMAMJJASOND".split(""), top: mois.map((m, i) => m === c.moisNom ? "≈" + fr(proj) : lab(v[i])), col: mois.map(m => m === c.moisNom ? "acc" : "blue"), H: 130, bw: 18 }) +
-    gcap("kWh consommés par la maison. Mois en cours : plein = réel, gris = projection."), "");
-  // facture
-  const parts = factureParts(proj), tot = factureJirama(proj), annAr = Object.entries(PM).filter(([m]) => m.endsWith("/" + c.anneeNom)).reduce((a, [m, x]) => a + factureJirama(m === c.moisNom ? proj : x), 0);
-  h += card("Si la maison était au réseau Jirama", donut(parts.map(p => ({ ...p, txt: ar(p.v) })), fr(Math.round(tot / 1000)) + " k Ar", "ce mois (proj.)") +
-    sep(tiles([tile("Mois préc.", c.moisPrec == null ? "—" : fr(Math.round(factureJirama(c.moisPrec) / 1000)), c.moisPrec == null ? "" : "k Ar", "", c.moisPrec == null ? "pas encore de données" : fr(c.moisPrec) + " kWh"),
-      tile("Année", fr(Math.round(annAr / 1000)), "k Ar", "ok", c.anneeNom + " · mois en cours projeté"), tile("Prix moyen", fr(Math.round(tot / Math.max(1, proj))), "Ar/kWh", "", "tout compris HT")])) +
-    sep(gh("Solaire ce mois · " + fr(c.pvMois, 1) + " kWh", c.pv3Jours != null && c.pv3Jours < c.joursMois ? `PV3 compté sur ${c.pv3Jours} j / ${c.joursMois}` : "") + pvPile(c.pv1Mois, c.pv2Mois, c.pv3Jours ? c.pv3Mois : null)) +
-    sep(tiles([tile("Solaire ce mois", fr(c.pvMois, 1), "kWh", "ac", "PV1 + PV2 + PV3"), tile("Valeur du solaire", fr(Math.round(c.pvMois * tot / Math.max(1, proj) / 1000)), "k Ar", "ok", "au prix moyen ci-dessus")], 2)),
-    `Tarif résidentiel « ${JIRAMA.nom} », grille ORE/Jirama 06/2021, hors taxes : tranches 370 · 600 · 909 Ar, prime fixe ${fr(JIRAMA.primeFixe)} Ar/kW, redevance ${fr(JIRAMA.redevance)} Ar.`);
+  const v = mois.map(m => PM[m] != null ? PM[m] : null);
+  h += card("Année " + c.anneeNom + " mois par mois", vbars({ v, lab: "JFMAMJJASOND".split(""), top: v.map(x => lab(x)), col: mois.map(m => m === c.moisNom ? "acc" : "blue"), H: 130, bw: 18 }) +
+    gcap("kWh réellement consommés par la maison. Orange : mois en cours (jusqu’à maintenant)."));
+  // facture sur les kWh réellement consommés
+  const parts = factureParts(c.mois), tot = factureJirama(c.mois);
+  const annAr = Object.entries(PM).filter(([m]) => m.endsWith("/" + c.anneeNom)).reduce((a, [, x]) => a + factureJirama(x), 0);
+  h += card("Ce que tu paierais à la Jirama", donut(parts.map(p => ({ ...p, txt: ar(p.v) })), ar(tot).replace(" Ar", ""), "Ar à ce jour") +
+    sep(tiles([tile("Énergie consommée", fr(Math.round(nrj(c.mois))), "Ar", "ok", `${fr(c.mois, 1)} kWh aux tranches`), tile("Abonnement du mois", fr(ab), "Ar", "", `prime fixe ${JIRAMA.psKW} kW + redevance`)], 2)) +
+    sep(tiles([tile("Mois préc.", c.moisPrec == null ? "—" : fr(Math.round(factureJirama(c.moisPrec) / 100) * 100), c.moisPrec == null ? "" : "Ar", "", c.moisPrec == null ? "pas de données" : fr(c.moisPrec, 1) + " kWh"),
+      tile("Année " + c.anneeNom, fr(Math.round(annAr / 100) * 100), "Ar", "", "mois réels additionnés"), tile("En euros", fr(tot / EUR, 2), "€", "", `à ${fr(EUR)} Ar/€`)])) +
+    sep(gh("Solaire ce mois · " + fr(c.pvMois, 1) + " kWh", c.pv3Jours != null && c.pv3Jours < c.joursMois ? `PV3 compté sur ${c.pv3Jours} j / ${c.joursMois}` : "") + pvPile(c.pv1Mois, c.pv2Mois, c.pv3Jours ? c.pv3Mois : null)),
+    `Montants hors taxes, calculés sur les kWh mesurés, grille ORE/Jirama 06/2021 « ${JIRAMA.nom} ». L’abonnement (prime fixe pour ${JIRAMA.psKW} kW souscrits + redevance) est dû en entier chaque mois ; la puissance de ${JIRAMA.psKW} kW est une hypothèse à confirmer.`);
   return h;
 }
 function soireesHTML() {
