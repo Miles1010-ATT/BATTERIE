@@ -220,6 +220,9 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 // ===== CONFIGURATION =====
 const DATA_URL = "https://script.google.com/macros/s/AKfycbzGNlzNaV2Qid4YNQdSIVxbOnYkj0_pODTBAjwJQoTk0Oi_cq-m_KaUOk_VyeqZw7gZ/exec";          // URL JSON (Apps Script) — vide = simulation intégrée
 const CAP = 1530, FLOOR = 50;
+// Tarif Jirama résidentiel « Confort » (tarif 25, puissance souscrite ≤ 6,6 kW) — grille ORE/Jirama 06/2021
+// T1 ≤ 130 kWh : 370 Ar · T2 ≤ 300 kWh : 600 Ar · T3 > 300 kWh : 909 Ar · prime fixe 3 140 Ar/kW/mois · redevance 10 000 Ar/mois
+const JIRAMA = { nom: "Confort (tarif 25)", tranches: [[130, 370], [300, 600], [Infinity, 909]], primeFixe: 3140, psKW: 6, redevance: 10000 };
 // =========================
 
 const $ = id => document.getElementById(id);
@@ -265,7 +268,7 @@ function simulation() {
     live: { t: new Date(L.t).toISOString(), pvG: 2350, maison: 640, battG: 1450, batt: 1450, apollo: null, etape: "Bulk charge", shunt: false },
     jour: { pvG: 6.4, apollo: null, pvTotal: null, maison: 4.1, chargeTot: 3.9, dechargeTot: 1.6, chargeG: 3.9, dechargeG: 1.6, shunt: false },
     energie: { plein: 73.4, stocke: +(L.soc / 100 * 73.44).toFixed(1), utilisable: +(Math.max(0, L.soc - 50) / 100 * 73.44).toFixed(1), estime: true },
-    compteur: { depuis: "01/11/2026", index: 25.6, mois: 25.6, moisNom: "11/2026", joursMois: 2, moisPrec: null, moisPrecNom: "10/2026", joursMoisPrec: 0, pvMois: 29.8, aujourdhui: 4.1 },
+    compteur: { depuis: "01/11/2026", index: 25.6, mois: 25.6, moisNom: "11/2026", joursMois: 2, moisPrec: null, moisPrecNom: "10/2026", joursMoisPrec: 0, pvMois: 29.8, aujourdhui: 4.1, annee: 25.6, anneeNom: "2026", parMois: { "11/2026": 25.6 } },
     soirees: [{ date: "01/11/2026", kWh: 3.6, pic: 1880, dechNuit: 5.6, socMin: 91.2 }],
     histo: { plusProfonde: -162, derniere: -108, moyenne: -135, kWhDech: 10.55, kWhCharge: 9.52, cycles: 2, depuisPleine: "6 h 10", vMin: 49.61, vMax: 58.40, alBasse: 0, alHaute: 1 } };
 }
@@ -443,15 +446,32 @@ $("bDays").addEventListener("click", e => { const k = e.target.closest("button")
 
 // ===== compteur « Jirama » et soirées =====
 const moisFr = m => { const [mm, yy] = String(m).split("/"); return ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][+mm - 1] + " " + yy; };
+// Facture Jirama estimée pour un mois de kWh (tranches progressives + prime fixe + redevance, hors taxes)
+function factureJirama(kWh) {
+  let reste = kWh, bas = 0, e = 0;
+  for (const [haut, prix] of JIRAMA.tranches) { const q = Math.max(0, Math.min(reste, haut - bas)); e += q * prix; reste -= q; bas = haut; if (reste <= 0) break; }
+  return Math.round(e + JIRAMA.primeFixe * JIRAMA.psKW + JIRAMA.redevance);
+}
+const ar = v => fr(Math.round(v / 100) * 100) + " Ar";
 function compteurHTML() {
   const c = D.compteur; if (!c) return "";
   const k = v => v == null ? "—" : fr(v, 1) + " kWh";
+  const [mm, yy] = c.moisNom.split("/").map(Number), jm = new Date(yy, mm, 0).getDate(), proj = c.mois / Math.max(1, c.joursMois) * jm;
+  const PM = c.parMois || {}, annAr = Object.entries(PM).filter(([m]) => m.endsWith("/" + c.anneeNom)).reduce((a, [m, v]) => a + factureJirama(m === c.moisNom ? proj : v), 0);
   return G("Compteur maison",
     R("Index", `<b>${k(c.index)}</b>`, "consommé depuis le " + c.depuis + " · sortie onduleur") +
-    R("Ce mois-ci", k(c.mois), `${moisFr(c.moisNom)} · ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} · ≈ ${fr(c.mois / Math.max(1, c.joursMois), 1)} kWh/jour`, "bl") +
-    R("Mois précédent", c.moisPrec == null ? "—" : k(c.moisPrec), c.moisPrec == null ? "pas encore de données" : `${moisFr(c.moisPrecNom)} · ${c.joursMoisPrec} jours`) +
     R("Aujourd’hui", k(c.aujourdhui), "depuis 00:00") +
-    R("Production solaire du mois", k(c.pvMois), "Gospower + Apollo (Apollo mesurés depuis le shunt)", "ac"));
+    R("Ce mois-ci", k(c.mois), `${moisFr(c.moisNom)} · ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} · ≈ ${fr(c.mois / Math.max(1, c.joursMois), 1)} kWh/jour`, "bl") +
+    R("Fin du mois (projection)", k(proj), `au rythme actuel sur ${jm} jours`) +
+    R("Mois précédent", c.moisPrec == null ? "—" : k(c.moisPrec), c.moisPrec == null ? "pas encore de données" : `${moisFr(c.moisPrecNom)} · ${c.joursMoisPrec} jours`) +
+    R("Cette année", k(c.annee), c.anneeNom + " · depuis le " + c.depuis) +
+    R("Production solaire du mois", k(c.pvMois), "Gospower + Apollo (Apollo mesurés depuis le shunt)", "ac")) +
+  G("Équivalent facture Jirama",
+    R("Ce mois-ci (projection)", ar(factureJirama(proj)), `${k(proj)} au tarif ${JIRAMA.nom}`, "ok") +
+    R("Mois précédent", c.moisPrec == null ? "—" : ar(factureJirama(c.moisPrec)), c.moisPrec == null ? "" : k(c.moisPrec)) +
+    R("Cette année", ar(annAr), `${c.anneeNom} · mois en cours projeté`, "ok") +
+    R("Prix moyen", ar(factureJirama(proj) / Math.max(1, proj)) + "/kWh", "tranches 370 · 600 · 909 Ar + prime fixe 6 kW + redevance")) +
+  `<p class="foot">Estimation hors taxes, d’après la grille Jirama résidentielle « Confort » (ORE, 06/2021). C’est ce que tu paierais si ta maison était au réseau.</p>`;
 }
 function soireesHTML() {
   const S = (D.soirees || []).slice(-14); if (!S.length) return "";
