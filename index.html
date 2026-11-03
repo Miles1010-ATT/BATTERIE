@@ -329,10 +329,11 @@ function renderCards() {
   const E = D.energie, J = D.jour;
   $("enSec").style.display = E ? "" : "none";
   if (E) {
-    $("enGrp").innerHTML = R("Stockée", `<span id="eS">—</span>`, `sur ${fr(E.plein, 1)} kWh · ${fr(CAP)} Ah × 48 V` + (E.estime ? " · SOC estimé" : "")) +
+    if (!$("eBar")) $("enGrp").innerHTML = R("Stockée", `<span id="eS">—</span>`, `<span id="eSub"></span>`) +
       `<div class="bar"><b id="eBar" style="width:0%"></b></div>` +
       R("Utilisable avant 50 %", `<span id="eU">—</span>`, "réserve jusqu’à la limite de décharge", "ok");
     anim($("eS"), E.stocke, v => fr(v, 1) + " kWh"); anim($("eU"), E.utilisable, v => fr(v, 1) + " kWh");
+    $("eSub").textContent = `sur ${fr(E.plein, 1)} kWh · ${fr(CAP)} Ah × 48 V` + (E.estime ? " · SOC estimé" : "");
     requestAnimationFrame(() => { const b = $("eBar"); if (b) b.style.width = Math.max(0, Math.min(100, E.stocke / E.plein * 100)) + "%"; });
   }
   $("jourSec").style.display = J ? "" : "none";
