@@ -137,6 +137,12 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .bar{height:8px;border-radius:4px;background:var(--s2);margin:0 16px 14px;overflow:hidden}
 .bar b{display:block;height:100%;border-radius:4px;background:var(--acc);transition:width 1s cubic-bezier(.2,.8,.2,1)}
 .bar b.mk{background:var(--ok)}
+.sbars{display:flex;gap:4px;align-items:flex-end;height:112px;padding:14px 12px 4px}
+.sbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;min-width:0}
+.sbars b{width:100%;max-width:26px;border-radius:5px 5px 2px 2px;background:var(--blue);opacity:.85}
+.sbars b.hot{background:var(--acc)}
+.sbars em{font:600 9.5px var(--r);font-style:normal;color:var(--mut)}
+.sbars span{font-size:9px;color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -259,6 +265,8 @@ function simulation() {
     live: { t: new Date(L.t).toISOString(), pvG: 2350, maison: 640, battG: 1450, batt: 1450, apollo: null, etape: "Bulk charge", shunt: false },
     jour: { pvG: 6.4, apollo: null, pvTotal: null, maison: 4.1, chargeTot: 3.9, dechargeTot: 1.6, chargeG: 3.9, dechargeG: 1.6, shunt: false },
     energie: { plein: 73.4, stocke: +(L.soc / 100 * 73.44).toFixed(1), utilisable: +(Math.max(0, L.soc - 50) / 100 * 73.44).toFixed(1), estime: true },
+    compteur: { depuis: "01/11/2026", index: 25.6, mois: 25.6, moisNom: "11/2026", joursMois: 2, moisPrec: null, moisPrecNom: "10/2026", joursMoisPrec: 0, pvMois: 29.8, aujourdhui: 4.1 },
+    soirees: [{ date: "01/11/2026", kWh: 3.6, pic: 1880, dechNuit: 5.6, socMin: 91.2 }],
     histo: { plusProfonde: -162, derniere: -108, moyenne: -135, kWhDech: 10.55, kWhCharge: 9.52, cycles: 2, depuisPleine: "6 h 10", vMin: 49.61, vMax: 58.40, alBasse: 0, alHaute: 1 } };
 }
 let D = null;
@@ -371,7 +379,7 @@ function renderBat() {
   $("kT").innerHTML = d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
   const al = d.alarmes || [];
   $("batAlert").innerHTML = al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : "");
-  const r = d.jours && d.jours[0] && d.jours[0].resume;
+  const r = d.jours && d.jours[0] && d.jours[0].resume && d.jours[0].resume.batterie ? d.jours[0].resume : null;
   if (r && r.ceMatin && r.ceMatin.avantLever) {
     const al2 = r.ceMatin.avantLever, s = socTable(al2.V, al2.conso_kW);
     $("restSub").textContent = `${fr(al2.V, 2)} V à ${fr(al2.conso_kW, 2)} kW · ${r.ceMatin.date}`;
@@ -384,7 +392,7 @@ let bDay = 0;
 function renderBilan() {
   const J = D.jours || []; if (!J.length) return;
   $("bDays").innerHTML = J.map((j, k) => `<button data-d="${k}" aria-pressed="${k === bDay}">${j.date.slice(0, 5)}${j.partiel ? " · en cours" : ""}</button>`).join("");
-  const j = J[bDay], r = j.resume, sh = j.shunt; let h = "";
+  const j = J[bDay], r = j.resume && j.resume.energie_kWh && j.resume.batterie ? j.resume : null, sh = j.shunt; let h = "";
   if (!r) {
     h += `<div class="alert info"><span class="ic">i</span><p>Bilan Gospower disponible demain à 06:00<small>Journée du ${j.date} en cours</small></p></div>`;
     if (sh) h += G("SmartShunt depuis 00:00", R("Charge batterie", fr(sh.charge, 2) + " kWh", "", "ok") + R("Décharge batterie", fr(sh.decharge, 2) + " kWh", "", "ac") + R("Net", sg(sh.charge - sh.decharge, 2) + " kWh"));
@@ -432,9 +440,36 @@ function renderBilan() {
 }
 $("bDays").addEventListener("click", e => { const k = e.target.closest("button"); if (!k) return; bDay = +k.dataset.d; renderBilan(); });
 
+
+// ===== compteur « Jirama » et soirées =====
+const moisFr = m => { const [mm, yy] = String(m).split("/"); return ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][+mm - 1] + " " + yy; };
+function compteurHTML() {
+  const c = D.compteur; if (!c) return "";
+  const k = v => v == null ? "—" : fr(v, 1) + " kWh";
+  return G("Compteur maison",
+    R("Index", `<b>${k(c.index)}</b>`, "consommé depuis le " + c.depuis + " · sortie onduleur") +
+    R("Ce mois-ci", k(c.mois), `${moisFr(c.moisNom)} · ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} · ≈ ${fr(c.mois / Math.max(1, c.joursMois), 1)} kWh/jour`, "bl") +
+    R("Mois précédent", c.moisPrec == null ? "—" : k(c.moisPrec), c.moisPrec == null ? "pas encore de données" : `${moisFr(c.moisPrecNom)} · ${c.joursMoisPrec} jours`) +
+    R("Aujourd’hui", k(c.aujourdhui), "depuis 00:00") +
+    R("Production solaire du mois", k(c.pvMois), "Gospower + Apollo (Apollo mesurés depuis le shunt)", "ac"));
+}
+function soireesHTML() {
+  const S = (D.soirees || []).slice(-14); if (!S.length) return "";
+  const mx = Math.max(...S.map(s => s.kWh || 0)) || 1, gros = S.reduce((a, s) => (s.kWh || 0) > (a.kWh || 0) ? s : a, S[0]);
+  const moy = S.reduce((a, s) => a + (s.kWh || 0), 0) / S.length;
+  const bars = `<div class="sbars">${S.map(s => `<div title="${s.date}"><em class="n">${fr(s.kWh, 1)}</em><b class="${s === gros ? "hot" : ""}" style="height:${Math.max(3, s.kWh / mx * 70)}px"></b><span>${s.date.slice(0, 5)}</span></div>`).join("")}</div>`;
+  const E = D.energie, res = E ? E.utilisable : null, n = res != null && gros.kWh ? res / gros.kWh : null;
+  const lec = n == null ? "" : n >= 2 ? ["ok", `La réserve actuelle couvre ${fr(Math.floor(n))} soirées comme la plus grosse`] : n >= 1 ? ["wa", "La réserve actuelle couvre une seule grosse soirée : rechargez bien la veille"] : ["bad", "La réserve actuelle ne couvre pas une soirée comme la plus grosse"];
+  const der = S[S.length - 1];
+  return `<div class="sec"><div class="h">Soirées 17 h – 02 h · ${S.length} dernières</div><div class="grp">${bars}` +
+    R("Plus grosse soirée", fr(gros.kWh, 2) + " kWh", `${gros.date} · pic ${gros.pic != null ? fr(gros.pic) + " W" : "—"}`, "ac") +
+    R("Soirée moyenne", fr(moy, 2) + " kWh") +
+    R("Dernière nuit (17 h – 06 h)", der.dechNuit != null ? fr(der.dechNuit, 2) + " kWh déchargés" : "—", der.socMin != null ? `${der.date} · SOC mini ${fr(der.socMin)} %` : der.date) +
+    (res != null ? R("Réserve avant 50 % maintenant", fr(res, 1) + " kWh", lec[1], lec[0]) : "") + `</div></div>`;
+}
 function renderHisto() {
   const h = D.histo; if (!h) return;
-  $("hisBody").innerHTML =
+  $("hisBody").innerHTML = compteurHTML() + soireesHTML() +
     G("Décharges", R("La plus profonde", sg(h.plusProfonde) + " Ah") + R("Dernière", sg(h.derniere) + " Ah") + R("Moyenne", sg(h.moyenne) + " Ah")) +
     G("Énergie", R("Déchargée", fr(h.kWhDech, 2) + " kWh") + R("Chargée", fr(h.kWhCharge, 2) + " kWh")) +
     G("Charge", R("Cycles", h.cycles) + R("Depuis la dernière charge complète", h.depuisPleine)) +
