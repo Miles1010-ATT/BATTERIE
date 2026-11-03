@@ -444,7 +444,7 @@ function renderHisto() {
 function renderSettings() {
   const A = [["SOC bas", "50 %, retombe à 55 %"], ["Tension avant lever", "< 48,7 V corrigée"], ["Tension basse", "< 48,0 V"], ["Tension élevée", "> 57,0 V (57,8 V en égalisation)"], ["Absorption non atteinte", "dans la journée"], ["Shunt muet", "> 30 min sans mesure"]];
   $("alList").innerHTML = A.map(([k, s]) => R(k, "Active", s, "ok")).join("");
-  const P = [["Capacité", "1530 Ah"], ["Tension chargée", "53,3 V"], ["Seuil de décharge", "50 %"], ["Courant de queue", "2,0 %"], ["Détection chargée", "3 min"], ["Peukert", "1,13"], ["Rendement de charge", "90 %"], ["Seuil de courant", "0,10 A"]];
+  const P = [["Capacité", "1530 Ah"], ["Tension chargée", "56,0 V"], ["Seuil de décharge", "50 %"], ["Courant de queue", "2,0 %"], ["Détection chargée", "3 min"], ["Peukert", "1,13"], ["Rendement de charge", "95 %"], ["Seuil de courant", "0,10 A"]];
   $("setList").innerHTML = P.map(([k, v]) => R(k, v)).join("");
 }
 
