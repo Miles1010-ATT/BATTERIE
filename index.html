@@ -143,6 +143,68 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .sbars b.hot{background:var(--acc)}
 .sbars em{font:600 9.5px var(--r);font-style:normal;color:var(--mut)}
 .sbars span{font-size:9px;color:var(--mut)}
+/* ===== composants graphiques ===== */
+.tiles{display:grid;gap:1px;background:var(--sep)}
+.tiles.c3{grid-template-columns:repeat(3,1fr)} .tiles.c2{grid-template-columns:repeat(2,1fr)}
+.tile{background:var(--s1);padding:12px 14px 13px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.tk{font-size:11.5px;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv{font:700 22px/1.1 var(--r);letter-spacing:-.02em;white-space:nowrap}
+.tiles.c2 .tv{font-size:24px}
+.tv i{font-style:normal;font-size:12px;font-weight:600;color:var(--mut);margin-left:3px;letter-spacing:0}
+.ts{font-size:11px;color:var(--mut);line-height:1.3}
+.sepb{border-top:1px solid var(--sep)}
+.gbox{padding:8px 12px 4px}
+.gx{width:100%;height:auto;display:block;overflow:visible}
+.gx .gt{font:700 9.5px var(--r);fill:var(--fg)}
+.gx .gl{font:500 9px var(--f);fill:var(--mut)}
+.gx .gz{font:700 8.5px var(--r);fill:var(--fg);opacity:.85}
+.gx .gavg{stroke:var(--mut);stroke-dasharray:3 4;stroke-width:1;fill:none}
+.gx .ggrid{stroke:var(--sep);stroke-width:1}
+.gx .gbase{stroke:var(--sep);stroke-width:1}
+.gx .gghost{fill:var(--mut);opacity:.22}
+.gx .gtick{stroke:var(--mut);stroke-width:1.5}
+.gx .gband{fill:var(--ok);opacity:.14}
+.gh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 14px 0;font-size:13px;font-weight:600}
+.gh span{color:var(--mut);font-weight:500;font-size:11.5px;white-space:nowrap}
+.gcap{font-size:11.5px;color:var(--mut);padding:2px 14px 12px;line-height:1.45}
+.gcap b{color:var(--fg)}
+.hbars{padding:14px;display:flex;flex-direction:column;gap:12px}
+.hb{display:grid;grid-template-columns:104px 1fr auto;align-items:center;gap:10px;font-size:13px}
+.hb small{display:block;font-size:10.5px;color:var(--mut);margin-top:1px}
+.ht{height:9px;border-radius:5px;background:var(--s2);overflow:hidden}
+.ht b{display:block;height:100%;border-radius:5px}
+.hv{font:700 13px var(--r);text-align:right;min-width:58px}
+.donut{display:flex;align-items:center;gap:14px;padding:14px}
+.donut svg{width:122px;flex:none}
+.donut .dv{font:800 16px var(--r);fill:var(--fg)}
+.leg{display:flex;flex-direction:column;gap:7px;flex:1;min-width:0;font-size:11.5px}
+.leg div{display:flex;align-items:center;gap:7px}
+.leg i,.pleg i{width:9px;height:9px;border-radius:3px;flex:none;display:inline-block}
+.leg span{flex:1;color:var(--mut);min-width:0}
+.leg b{font:700 12px var(--r);white-space:nowrap}
+.pile{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--s2);margin:10px 14px 9px;gap:2px}
+.pile b{height:100%}
+.pleg{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 14px 13px;font-size:12px;color:var(--mut)}
+.pleg span{display:flex;align-items:center;gap:6px}
+.pleg b{color:var(--fg);font:700 12.5px var(--r)}
+.verdict small{display:block;font:500 13px var(--f);color:var(--mut);margin-top:3px}
+/* compteur électromécanique */
+.mtr{margin:16px auto 6px;width:fit-content;max-width:calc(100% - 28px);background:linear-gradient(180deg,#e9ece9,#c9cec9);border-radius:16px;padding:10px 12px 10px;
+  box-shadow:inset 0 1px 0 #fff,0 6px 18px rgba(0,0,0,.25);color:#2b302e}
+.mtr-p{display:flex;justify-content:space-between;gap:14px;font:700 9.5px var(--f);letter-spacing:.06em;text-transform:uppercase;opacity:.75;padding:0 2px 7px}
+.mtr-w{display:flex;align-items:center;gap:3px;background:#0d0f0f;border-radius:8px;padding:5px 7px;box-shadow:inset 0 2px 6px rgba(0,0,0,.8)}
+.mtr-w b{font:700 12px var(--f);color:#cfd5d2;margin-left:6px}
+.mtr-w em{font:700 22px var(--r);color:#cfd5d2;font-style:normal;margin:0 -1px}
+.dg{width:26px;height:34px;overflow:hidden;border-radius:4px;background:linear-gradient(180deg,#000 0,#2a2e2d 22%,#2a2e2d 78%,#000 100%)}
+.dg.r{background:linear-gradient(180deg,#3a0806 0,#b52a20 22%,#b52a20 78%,#3a0806 100%)}
+.dg span{display:flex;flex-direction:column;transition:transform 2.2s cubic-bezier(.25,.8,.25,1)}
+.dg i{height:34px;display:flex;align-items:center;justify-content:center;font:700 24px ui-monospace,"SF Mono",Menlo,monospace;font-style:normal;color:#f4f6f5}
+.mtr-b{display:flex;align-items:center;gap:9px;padding:8px 2px 0;font:600 10.5px var(--f)}
+.mtr-b span:last-child{margin-left:auto;opacity:.6;font-size:9.5px}
+.disq{width:58px;height:10px;border-radius:50%;background:linear-gradient(180deg,#9aa19d,#e8ebe9 45%,#7d847f);overflow:hidden;position:relative;flex:none;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.disq i{position:absolute;top:0;bottom:0;width:7px;left:-8px;background:#c0261c;border-radius:2px;animation:disq 8s linear infinite}
+@keyframes disq{0%{left:-8px;opacity:0}8%{opacity:1}50%{left:58px;opacity:1}50.01%{opacity:0}100%{left:58px;opacity:0}}
+.odo-s{text-align:center;font-size:11.5px;color:var(--mut);padding:2px 14px 12px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -194,6 +256,7 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
     <div class="chips" id="picks"></div>
     <div class="cbox" id="cbox"><svg id="chart" viewBox="0 0 360 220"></svg><div class="tip" id="tip"></div></div>
     <p class="foot">Glissez le doigt sur la courbe pour lire les valeurs.</p>
+    <div id="cstat" style="display:flex;flex-direction:column;gap:18px"></div>
   </section>
 
   <!-- HISTORIQUE -->
@@ -348,21 +411,14 @@ function renderCards() {
     requestAnimationFrame(() => { const b = $("eBar"); if (b) b.style.width = Math.max(0, Math.min(100, E.stocke / E.plein * 100)) + "%"; });
   }
   $("jourSec").style.display = J ? "" : "none";
-  if (J) {
-    const k = v => v == null ? "—" : fr(v, 2) + " kWh";
-    $("jourGrp").innerHTML =
-      R("Production solaire", J.pvTotal != null ? k(J.pvTotal) : k(J.pvG), J.apollo != null ? `Gospower ${k(J.pvG)} · Apollo ${k(J.apollo)}` : "Gospower seul · Apollo dès le shunt", "ac") +
-      R("Chargé dans la batterie", k(J.chargeTot), J.shunt ? `dont Gospower ${k(J.chargeG)} · Apollo ${k(J.apollo)}` : "côté Gospower (Apollo non vus)", "ok") +
-      R("Déchargé de la batterie", k(J.dechargeTot), "", "ac") +
-      R("Consommation maison", k(J.maison), "sortie de l’onduleur", "bl");
-  }
+  if (J) $("jourGrp").innerHTML = jourHTML(J);
 }
 // ===== rendu =====
 function render() {
   const d = D;
   $("upd").innerHTML = (d.offline ? "Hors ligne · " : "") + dmy(d.updatedAt) + " " + hm(d.updatedAt) + (d.sim ? '<span class="tag">SIMULATION</span>' : "");
   $("live").className = "live" + (d.offline ? " off" : "");
-  renderBat(); renderBilan(); renderHisto(); renderSettings(); chart();
+  renderBat(); renderBilan(); renderHisto(); renderSettings(); chart(); cstat();
 }
 function renderBat() {
   const d = D, C = 2 * Math.PI * 88, arc = .75 * C, low = d.soc < FLOOR;
@@ -392,43 +448,154 @@ function renderBat() {
   }
 }
 let bDay = 0;
+// ===== composants graphiques (tuiles, barres, anneau, jauges) =====
+const lab = v => v == null || isNaN(v) ? "" : fr(v, Math.abs(v) < 10 ? 1 : 0);
+const tile = (k, v, u, c, s) => `<div class="tile"><span class="tk">${k}</span><span class="tv n ${c || ""}">${v}${u ? `<i>${u}</i>` : ""}</span>${s ? `<span class="ts">${s}</span>` : ""}</div>`;
+const tiles = (a, cols) => `<div class="tiles c${cols || 3}">${a.join("")}</div>`;
+const gh = (t, s) => `<div class="gh">${t}${s ? `<span>${s}</span>` : ""}</div>`;
+const gcap = t => `<div class="gcap">${t}</div>`;
+const card = (h, body, foot) => `<div class="sec">${h ? `<div class="h">${h}</div>` : ""}<div class="grp">${body}</div>${foot ? `<p class="foot">${foot}</p>` : ""}</div>`;
+const sep = x => `<div class="sepb">${x}</div>`;
+
+// Barres verticales : v (valeurs), lab (étiquettes du bas), top (petits chiffres), ghost (fond : moyenne / projection), avg (ligne pointillée)
+function vbars(o) {
+  const n = o.v.length, W = 340, H = o.H || 132, T = 16, B = H - 17, L = 2, Rr = W - 2, slot = (Rr - L) / n, bw = Math.min(o.bw || 28, slot * (n > 16 ? .72 : .62));
+  const mx = Math.max(1e-9, ...o.v.map(x => x || 0), ...(o.ghost || []).map(x => x || 0), o.avg || 0);
+  const Y = v => B - (B - T) * v / mx;
+  let s = `<line x1="${L}" x2="${Rr}" y1="${B + .5}" y2="${B + .5}" class="gbase"/>`;
+  o.v.forEach((v, k) => {
+    const cx = L + slot * (k + .5), x = cx - bw / 2, g = o.ghost ? o.ghost[k] : null;
+    if (g != null) s += `<rect x="${x}" y="${Y(g)}" width="${bw}" height="${Math.max(0, B - Y(g))}" rx="${Math.min(4, bw / 3)}" class="gghost"/>`;
+    if (v != null) s += `<rect x="${x}" y="${Math.min(Y(v), B - 2)}" width="${bw}" height="${Math.max(2, B - Y(v))}" rx="${Math.min(4, bw / 3)}" style="fill:var(--${(o.col && o.col[k]) || "blue"})"/>`;
+    if (g != null && v != null && g > v) s += `<line x1="${x}" x2="${x + bw}" y1="${Y(g)}" y2="${Y(g)}" class="gtick"/>`;
+    const tt = o.top ? o.top[k] : lab(v);
+    if (tt) s += `<text x="${cx}" y="${Math.min(Y(Math.max(v || 0, g || 0)), B - 2) - 4}" text-anchor="middle" class="gt">${tt}</text>`;
+    if (o.lab[k]) s += `<text x="${cx}" y="${H - 3}" text-anchor="middle" class="gl">${o.lab[k]}</text>`;
+  });
+  if (o.avg) s += `<line x1="${L}" x2="${Rr}" y1="${Y(o.avg)}" y2="${Y(o.avg)}" class="gavg"/><text x="${Rr - 2}" y="${Y(o.avg) - 4}" text-anchor="end" class="gl">${o.avgTxt || ""}</text>`;
+  return `<div class="gbox"><svg class="gx" viewBox="0 0 ${W} ${H}">${s}</svg></div>`;
+}
+// Barres horizontales : {k, s, v, txt, c}
+function hbars(items, max) {
+  const m = max || Math.max(...items.map(i => Math.abs(i.v || 0))) || 1;
+  return `<div class="hbars">${items.map(i => `<div class="hb"><span class="hk">${i.k}${i.s ? `<small>${i.s}</small>` : ""}</span><span class="ht"><b style="width:${i.v ? Math.max(2, Math.min(100, Math.abs(i.v) / m * 100)) : 0}%;background:var(--${i.c || "blue"})"></b></span><span class="hv n">${i.txt}</span></div>`).join("")}</div>`;
+}
+// Anneau (répartition) avec légende chiffrée
+function donut(parts, c1, c2) {
+  const P = parts.filter(p => p.v > 0), tot = P.reduce((a, p) => a + p.v, 0) || 1, r = 46, C = 2 * Math.PI * r; let off = 0, s = "";
+  P.forEach(p => { const l = p.v / tot * C; s += `<circle cx="60" cy="60" r="${r}" fill="none" stroke-width="15" style="stroke:var(--${p.col})" stroke-dasharray="${Math.max(.5, l - 2)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`; off += l; });
+  return `<div class="donut"><svg class="gx" viewBox="0 0 120 120"><circle cx="60" cy="60" r="${r}" fill="none" stroke-width="15" style="stroke:var(--s2)"/>${s}<text x="60" y="61" text-anchor="middle" class="dv">${c1}</text><text x="60" y="76" text-anchor="middle" class="gl">${c2}</text></svg>
+    <div class="leg">${parts.map(p => `<div><i style="background:var(--${p.col})"></i><span>${p.k}</span><b class="n">${p.txt}</b></div>`).join("")}</div></div>`;
+}
+// Barre empilée + légende
+function pile(parts) {
+  const tot = parts.reduce((a, p) => a + Math.max(0, p.v || 0), 0) || 1;
+  return `<div class="pile">${parts.map(p => p.v > 0 ? `<b style="width:${p.v / tot * 100}%;background:var(--${p.col})"></b>` : "").join("")}</div>
+    <div class="pleg">${parts.map(p => `<span><i style="background:var(--${p.col})"></i>${p.k} <b class="n">${p.txt}</b></span>`).join("")}</div>`;
+}
+// Jauge linéaire à zones colorées et repères chiffrés
+function jauge(o) {
+  const W = 340, L = 12, Rr = 328, X = v => L + (Rr - L) * (Math.max(o.min, Math.min(o.max, v)) - o.min) / (o.max - o.min);
+  let s = `<rect x="${L}" y="34" width="${Rr - L}" height="14" rx="7" style="fill:var(--s2)"/>`;
+  s += `<clipPath id="${o.id}"><rect x="${L}" y="34" width="${Rr - L}" height="14" rx="7"/></clipPath><g clip-path="url(#${o.id})">`;
+  o.zones.forEach(([a, b, c, t]) => { s += `<rect x="${X(a)}" y="34" width="${X(b) - X(a)}" height="14" style="fill:var(--${c});opacity:.32"/>`;
+    if (t) s += `<text x="${(X(a) + X(b)) / 2}" y="44.5" text-anchor="middle" class="gz">${t}</text>`; });
+  s += `</g>`;
+  (o.ticks || []).forEach(t => s += `<text x="${X(t.v)}" y="62" text-anchor="middle" class="gl">${t.t}</text>`);
+  const ms = [...o.marks].sort((a, b) => a.v - b.v); let last = -99;
+  ms.forEach(m => { const x = X(m.v), lift = x - last < 64 ? 1 : 0; last = lift ? last : x;
+    const ty = lift ? 9 : 22; s += `<line x1="${x}" x2="${x}" y1="${ty + 4}" y2="50" style="stroke:var(--${m.col || "fg"})" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<text x="${Math.max(L + 18, Math.min(Rr - 18, x))}" y="${ty}" text-anchor="middle" class="gt" style="fill:var(--${m.col || "fg"})">${m.t}</text>`; });
+  return `<div class="gbox"><svg class="gx" viewBox="0 0 ${W} 66">${s}</svg></div>`;
+}
+// Compteur électromécanique : rouleaux qui tournent jusqu'à la valeur, dernier chiffre rouge, disque qui tourne selon la puissance
+let odoPrev = null;
+function compteurReel(v, W, titre) {
+  const digs = x => { const e = String(Math.floor(x)).padStart(5, "0").slice(-5), d = String(Math.floor(x * 10 + 1e-6) % 10); return [...e, d].map(Number); };
+  const to = digs(v), from = odoPrev != null ? digs(odoPrev) : to.map(() => 0); odoPrev = v;
+  const tour = W > 5 ? 3600 / (W * 0.6) : 0;                                   // disque 600 tr/kWh : secondes par tour
+  return `<div class="mtr"><div class="mtr-p"><span>${titre}</span><span>230 V · 50 Hz</span></div>
+    <div class="mtr-w">${to.map((d, i) => `${i === 5 ? '<em>,</em>' : ""}<div class="dg${i === 5 ? " r" : ""}"><span data-to="${d}" style="transform:translateY(${-from[i] * 34}px)">${[0,1,2,3,4,5,6,7,8,9].map(n => `<i>${n}</i>`).join("")}</span></div>`).join("")}<b>kWh</b></div>
+    <div class="mtr-b"><div class="disq"><i style="${tour ? `animation-duration:${Math.min(600, tour).toFixed(1)}s` : "animation:none"}"></i></div><span>${W != null ? fr(W) + " W" : "—"}${tour ? " · 1 tour / " + fr(tour, tour < 10 ? 1 : 0) + " s" : ""}</span><span>600 tr/kWh</span></div></div>`;
+}
+function roulerCompteur() { requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll(".mtr .dg span").forEach(s => s.style.transform = `translateY(${-s.dataset.to * 34}px)`))); }
+// Profil horaire (W moyens par heure) : barres pleines = série principale, fond gris = référence
+function profilHTML(main, ref, opts) {
+  const hNow = new Date().getHours();
+  const col = main.map((v, h) => h >= 17 || h < 2 ? "acc" : h >= 2 && h < 6 ? "mut" : "blue");
+  const top = main.map((v, h) => h % 3 === 0 && v != null ? fr(v / 1000, 1) : "");
+  return vbars({ v: main, ghost: ref, col, top, H: 140, lab: main.map((_, h) => h % 3 === 0 ? h + " h" : ""), bw: 11, ...(opts || {}) });
+}
+const moyH = (A, a, b) => { const x = A.slice(a, b).filter(v => v != null); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; };
+
+// ----- Batterie : journée en cours -----
+function jourHTML(J) {
+  const k = v => v == null ? "—" : fr(v, 1), pv = J.pvTotal != null ? J.pvTotal : J.pvG;
+  let h = tiles([
+    tile("Solaire", k(pv), "kWh", "ac", J.apollo != null ? `Gospower ${k(J.pvG)} · Apollo ${k(J.apollo)}` : "Gospower · Apollo dès le shunt"),
+    tile("Maison", k(J.maison), "kWh", "bl", "sortie de l’onduleur"),
+    tile("Chargé", k(J.chargeTot), "kWh", "ok", "dans la batterie"),
+    tile("Déchargé", k(J.dechargeTot), "kWh", "ac", "de la batterie")], 2);
+  const P = D.profil;
+  if (P && P.aujW && P.aujW.some(v => v != null)) {
+    const rythme = P.moyAujW != null ? fr(P.moyAujW * 24 / 1000, 1) : "—";
+    h += sep(gh("Maison heure par heure", "kW · aujourd’hui") + profilHTML(P.aujW, P.moyW) +
+      gcap(`Moyenne aujourd’hui <b class="n">${P.moyAujW != null ? fr(P.moyAujW) + " W" : "—"}</b> · à ce rythme ≈ ${rythme} kWh/jour. En gris : moyenne des ${P.jours || 0} derniers jours.`));
+  }
+  return h;
+}
+
+// ----- Bilan -----
+function tensionJour(b) {
+  const pts = [[b.minNuit.a, b.minNuit.V, "min nuit"], [b.max.a, b.max.V, "max"], [b.a18h.a, b.a18h.V, "18 h"], [b.fin.a, b.fin.V, "minuit"]]
+    .filter(p => p[0] && p[1] != null).map(([a, V, t]) => ({ x: +a.slice(0, 2) + +a.slice(3, 5) / 60, V, t, a }));
+  const W = 340, H = 150, L = 30, Rr = 334, T = 18, B = 128, lo = 48, hi = 59, X = x => L + (Rr - L) * x / 24, Y = v => B - (B - T) * (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo);
+  let s = "";
+  [48, 50, 52, 54, 56, 58].forEach(v => s += `<line x1="${L}" x2="${Rr}" y1="${Y(v)}" y2="${Y(v)}" class="ggrid"/><text x="${L - 5}" y="${Y(v) + 3}" text-anchor="end" class="gl">${v}</text>`);
+  [0, 6, 12, 18, 24].forEach(h => s += `<text x="${X(h)}" y="${H - 4}" text-anchor="middle" class="gl">${h} h</text>`);
+  if (b.absorptionDebut) { const a = +b.absorptionDebut.slice(0, 2) + +b.absorptionDebut.slice(3, 5) / 60, d = (b.absorptionDuree_min || 0) / 60;
+    s += `<rect x="${X(a)}" y="${T}" width="${Math.max(2, X(a + d) - X(a))}" height="${B - T}" class="gband"/><text x="${X(a + d / 2)}" y="${T - 5}" text-anchor="middle" class="gl">absorption</text>`; }
+  if (b.consigneCV) s += `<line x1="${L}" x2="${Rr}" y1="${Y(b.consigneCV)}" y2="${Y(b.consigneCV)}" class="gavg"/>`;
+  s += `<line x1="${L}" x2="${Rr}" y1="${Y(48)}" y2="${Y(48)}" style="stroke:var(--crit);opacity:.5" stroke-dasharray="2 3"/>`;
+  s += `<polyline points="${pts.map(p => X(p.x) + "," + Y(p.V)).join(" ")}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round"/>`;
+  pts.forEach(p => s += `<circle cx="${X(p.x)}" cy="${Y(p.V)}" r="3.5" style="fill:var(--acc);stroke:var(--s1)" stroke-width="1.5"/><text x="${Math.max(L + 14, Math.min(Rr - 14, X(p.x)))}" y="${Y(p.V) + (p.V > 56 ? 14 : -7)}" text-anchor="middle" class="gt">${fr(p.V, 1)}</text>`);
+  return `<div class="gbox"><svg class="gx" viewBox="0 0 ${W} ${H}">${s}</svg></div>`;
+}
 function renderBilan() {
   const J = D.jours || []; if (!J.length) return;
   $("bDays").innerHTML = J.map((j, k) => `<button data-d="${k}" aria-pressed="${k === bDay}">${j.date.slice(0, 5)}${j.partiel ? " · en cours" : ""}</button>`).join("");
   const j = J[bDay], r = j.resume && j.resume.energie_kWh && j.resume.batterie ? j.resume : null, sh = j.shunt; let h = "";
   if (!r) {
-    h += `<div class="alert info"><span class="ic">i</span><p>Bilan Gospower disponible demain à 06:00<small>Journée du ${j.date} en cours</small></p></div>`;
-    if (sh) h += G("SmartShunt depuis 00:00", R("Charge batterie", fr(sh.charge, 2) + " kWh", "", "ok") + R("Décharge batterie", fr(sh.decharge, 2) + " kWh", "", "ac") + R("Net", sg(sh.charge - sh.decharge, 2) + " kWh"));
+    h += `<div class="alert info"><span class="ic">i</span><p>Bilan Gospower complet demain à 06:20<small>Journée du ${j.date}${j.partiel ? " en cours" : ""}</small></p></div>`;
+    if (sh) h += card("SmartShunt depuis 00:00", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac"), tile("Net", sg(sh.charge - sh.decharge, 1), "kWh", sh.charge >= sh.decharge ? "ok" : "ac")]) +
+      pile([{ k: "Chargé", v: sh.charge, col: "ok", txt: fr(sh.charge, 1) }, { k: "Déchargé", v: sh.decharge, col: "acc", txt: fr(sh.decharge, 1) }]));
     $("bilBody").innerHTML = h; return;
   }
   const e = r.energie_kWh, b = r.batterie, A = alertes(r);
-  const sNow = socTable(r.ceMatin.avantLever.V, r.ceMatin.avantLever.conso_kW), sPrev = socTable(b.avantLever.V, b.avantLever.conso_kW);
-  const net = e.battNet;
-  const verdict = `${Math.abs(net) < 1 ? "Bilan quasi équilibré" : net > 0 ? "Batterie rechargée" : "Batterie en déficit"} (${sg(net, 2)} kWh), ${fr(sNow)} % ce matin.`;
-  h += `<p class="verdict">${verdict}</p>`;
+  const sNow = socTable(r.ceMatin.avantLever.V, r.ceMatin.avantLever.conso_kW), sPrev = socTable(b.avantLever.V, b.avantLever.conso_kW), net = e.battNet;
+  h += `<p class="verdict">${Math.abs(net) < 1 ? "Bilan quasi équilibré" : net > 0 ? "Batterie rechargée" : "Batterie en déficit"} <span class="${net < 0 ? "ac" : "ok"} n">${sg(net, 1)} kWh</span><small>${fr(sNow)} % ce matin au repos</small></p>`;
   h += A.length ? A.map(([t, s]) => `<div class="alert"><span class="ic">!</span><p>${t}<small>${s}</small></p></div>`).join("")
                : `<div class="alert okb"><span class="ic">✓</span><p>Aucune alerte</p></div>`;
   if (eqDay(r.ceMatin.date)) h += `<div class="alert info"><span class="ic">i</span><p>Égalisation aujourd’hui<small>CV Gospower à 57,6 V ce matin (vérifier l’eau avant), remettre 56,4 V ce soir</small></p></div>`;
-  h += `<div class="kpis"><div class="kpi"><b class="n">${fr(e.pvTotal, 1)}</b><span>PV kWh</span></div><div class="kpi"><b class="n">${fr(e.conso, 1)}</b><span>Conso kWh</span></div><div class="kpi"><b class="n ${net < 0 ? "ac" : "ok"}">${sg(net, 2)}</b><span>Net batt. kWh</span></div></div>`;
-  h += `<div class="sec"><div class="h">Production</div><div class="grp">
-      ${R("PV1 · 9 panneaux", fr(e.pv1, 2) + " kWh")}${R("PV2 · 6 panneaux", fr(e.pv2, 2) + " kWh")}
-      <div class="split"><b style="width:${e.pv1 / e.pvTotal * 100}%;background:var(--acc)"></b><b style="width:${e.pv2 / e.pvTotal * 100}%;background:var(--blue)"></b></div>
-      ${R("Pic PV", fr(r.pvMax.kW, 2) + " kW", "à " + r.pvMax.a)}
-      ${R("Apollo", sh && sh.apollo != null ? fr(sh.apollo, 2) + " kWh" : "—", "non comptés · écran du maître, DAY LOG#01")}</div></div>`;
-  const P = r.profilConso_kWh, keys = ["02-10h", "10-14h", "14-17h", "17-02h"], mx = Math.max(...keys.map(k => P[k]));
-  h += `<div class="sec"><div class="h">Consommation par tranche</div><div class="grp">
-      <div class="prof">${keys.map(k => `<div><em class="n">${fr(P[k], 2)}</em><b class="${k === "17-02h" && P[k] / 9 > .6 ? "hot" : ""}" style="height:${P[k] / mx * 62}px"></b></div>`).join("")}</div>
-      <div class="profl">${keys.map(k => `<span>${k.replace("-", "–")}</span>`).join("")}</div>
-      ${R("Pic de consommation", fr(r.consoMax.kW, 2) + " kW", "à " + r.consoMax.a)}
-      ${R("Conso nocturne > 0,6 kW", r.consoNocturneSup06_min + " min", "seuil d’alerte 60 min", r.consoNocturneSup06_min > 60 ? "bad" : "")}</div></div>`;
-  h += G("Batterie", R("Avant lever, veille", `${fr(b.avantLever.V, 2)} V`, `≈ ${fr(sPrev)} % · ${fr(b.avantLever.conso_kW, 2)} kW`) +
-    R("Minimum de nuit", `${fr(b.minNuit.V, 1)} V`, "à " + b.minNuit.a) +
-    R("Absorption", b.absorptionDebut, `${b.absorptionDuree_min} min · fin de charge ${b.finCharge}`, "ok") +
-    R("Maximum", `${fr(b.max.V, 1)} V`, `à ${b.max.a} · CV ${fr(b.consigneCV, 1)} V`, b.max.V > 57.8 || b.max.V > 57 ? "bad" : "") +
-    R("18:00", `${fr(b.a18h.V, 1)} V`) + R("23:59", `${fr(b.fin.V, 1)} V`) +
-    R("Ce matin avant lever", `≈ ${fr(sNow)} %`, `${fr(r.ceMatin.avantLever.V, 2)} V à ${fr(r.ceMatin.avantLever.conso_kW, 2)} kW · ${r.ceMatin.date}`));
-  if (sh) h += G("SmartShunt", R("Charge batterie", fr(sh.charge, 2) + " kWh", "toutes sources", "ok") + R("dont Gospower", fr(e.battCharge, 2) + " kWh") +
-    R("dont Apollo", sh.apollo != null ? fr(sh.apollo, 2) + " kWh" : "—", sh.apollo != null ? "charge shunt − charge Gospower" : "inconnu avant la pose du shunt") + R("Décharge batterie", fr(sh.decharge, 2) + " kWh", "", "ac"));
+  // flux de la journée
+  const versBatt = Math.max(0, e.battCharge), versMaison = Math.max(0, e.pvTotal - versBatt);
+  h += card("Énergie de la journée", tiles([tile("Solaire", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok")]) +
+    sep(gh("Où est allé le solaire") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
+    sep(gh("D’où venait la maison") + pile([{ k: "Solaire direct", v: Math.max(0, e.conso - e.battDecharge), col: "acc", txt: fr(Math.max(0, e.conso - e.battDecharge), 1) }, { k: "Batterie", v: e.battDecharge, col: "warn", txt: fr(e.battDecharge, 1) }])));
+  // production
+  h += card("Production solaire", pile([{ k: "PV1 · 9 panneaux", v: e.pv1, col: "acc", txt: fr(e.pv1, 1) + " kWh" }, { k: "PV2 · 6 panneaux", v: e.pv2, col: "blue", txt: fr(e.pv2, 1) + " kWh" }]) +
+    sep(tiles([tile("Pic PV", fr(r.pvMax.kW, 2), "kW", "", "à " + r.pvMax.a), tile("Apollo", sh && sh.apollo != null ? fr(sh.apollo, 1) : "—", sh && sh.apollo != null ? "kWh" : "", "", "mesuré par le shunt")], 2)));
+  // consommation par tranche
+  const P = r.profilConso_kWh, keys = ["02-10h", "10-14h", "14-17h", "17-02h"], dur = { "02-10h": 8, "10-14h": 4, "14-17h": 3, "17-02h": 9 };
+  h += card("Consommation par tranche", vbars({ v: keys.map(k => P[k]), lab: keys.map(k => k.replace("-", "–")), top: keys.map(k => fr(P[k], 1) + " kWh"), col: keys.map(k => k === "17-02h" ? "acc" : "blue"), H: 120, bw: 46 }) +
+    gcap(keys.map(k => `${k.replace("-", "–")} ≈ ${fr(P[k] / dur[k] * 1000)} W`).join(" · ")) +
+    sep(tiles([tile("Pic", fr(r.consoMax.kW, 2), "kW", "", "à " + r.consoMax.a), tile("Nuit > 0,6 kW", r.consoNocturneSup06_min, "min", r.consoNocturneSup06_min > 60 ? "bad" : "", "seuil 60 min")], 2)));
+  // batterie
+  h += card("Tension batterie", gh("Au fil de la journée", "V") + tensionJour(b) +
+    gcap(`Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min, fin de charge ${b.finCharge}.`) +
+    sep(tiles([tile("Avant lever, veille", "≈ " + fr(sPrev), "%", "", `${fr(b.avantLever.V, 2)} V à ${fr(b.avantLever.conso_kW, 2)} kW`), tile("Ce matin", "≈ " + fr(sNow), "%", "ok", `${fr(r.ceMatin.avantLever.V, 2)} V · ${r.ceMatin.date}`)], 2)));
+  if (sh) h += card("SmartShunt", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok", "toutes sources"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac")], 2) +
+    sep(gh("Qui a chargé la batterie") + pile([{ k: "Gospower", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "Apollo", v: sh.apollo || 0, col: "blue", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
   const cm = r.chargeMatin, absAvant = b.absorptionDebut && b.absorptionDebut < "10:30";
   h += G("Charge du matin · 07:00–10:30", R("Courant moyen", fr(cm.courantMoyen_A) + " A", `max ${fr(cm.max_A, 1)} A · ${cm.releves_sup50A} relevés > 50 A`) +
     R("Tension PV1 moyenne", fr(cm.pv1Moyen_V) + " V") +
@@ -438,64 +605,109 @@ function renderBilan() {
     R("Trous de données", r.trous.length ? r.trous.length : "Aucun", r.points + " relevés", r.trous.length ? "bad" : "ok") +
     ch.map(c => R(`Chute ${sg(-c.dV, 1)} V à ${c.at}`, c.loadApres >= 1 && c.pvApres >= c.pvAvant * .9 ? "Conso" : c.pvApres < c.pvAvant * .8 ? "Nuages" : "Fin absorption", `PV ${fr(c.pvAvant, 2)} → ${fr(c.pvApres, 2)} kW · charge ${fr(c.loadApres, 1)} kW`, "mu")).join("") +
     R("Horloge onduleur", sg(-r.horloge.retard_h, 0) + " h", "retard connu, à remettre à l’heure", "wa"));
-  h += `<p class="foot">Source : bilan Gospower du ${r.veille} (portail Solar of Things, intégration 5 min). Les Apollo ne sont pas comptés.</p>`;
+  h += `<p class="foot">Source : bilan Gospower du ${r.veille} (portail Solar of Things, intégration 5 min).</p>`;
   $("bilBody").innerHTML = h;
 }
-$("bDays").addEventListener("click", e => { const k = e.target.closest("button"); if (!k) return; bDay = +k.dataset.d; renderBilan(); });
 
-
-// ===== compteur « Jirama » et soirées =====
+// ----- Historique : compteur, facture, soirées, profil -----
 const moisFr = m => { const [mm, yy] = String(m).split("/"); return ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][+mm - 1] + " " + yy; };
-// Facture Jirama estimée pour un mois de kWh (tranches progressives + prime fixe + redevance, hors taxes)
-function factureJirama(kWh) {
-  let reste = kWh, bas = 0, e = 0;
-  for (const [haut, prix] of JIRAMA.tranches) { const q = Math.max(0, Math.min(reste, haut - bas)); e += q * prix; reste -= q; bas = haut; if (reste <= 0) break; }
-  return Math.round(e + JIRAMA.primeFixe * JIRAMA.psKW + JIRAMA.redevance);
+function factureParts(kWh) {
+  let reste = kWh, bas = 0; const P = [];
+  JIRAMA.tranches.forEach(([haut, prix], i) => { const q = Math.max(0, Math.min(reste, haut - bas)); P.push({ k: `T${i + 1} · ${fr(q)} kWh à ${prix}`, v: q * prix, col: ["ok", "warn", "crit"][i] }); reste -= q; bas = haut; });
+  P.push({ k: `Prime fixe ${JIRAMA.psKW} kW`, v: JIRAMA.primeFixe * JIRAMA.psKW, col: "blue" }, { k: "Redevance", v: JIRAMA.redevance, col: "mut" });
+  return P;
 }
+function factureJirama(kWh) { return Math.round(factureParts(kWh).reduce((a, p) => a + p.v, 0)); }
 const ar = v => fr(Math.round(v / 100) * 100) + " Ar";
+function trancheTxt(k, parJour, mm, yy) {
+  const T = JIRAMA.tranches, i = T.findIndex(([haut]) => k < haut), prix = T[i][1];
+  if (i === T.length - 1) return `Tranche <b>T${i + 1}</b> atteinte : chaque kWh en plus coûte <b class="n">${prix} Ar</b> (les ${fr(T[0][0])} premiers restent à ${T[0][1]} Ar, la suite jusqu’à ${fr(T[1][0])} à ${T[1][1]} Ar).`;
+  const reste = T[i][0] - k, j = parJour > 0 ? Math.ceil(reste / parJour) : null, d = j != null ? new Date(Date.now() + j * 864e5) : null;
+  const dans = d && d.getMonth() + 1 === mm ? ` vers le ${String(d.getDate()).padStart(2, "0")}/${String(mm).padStart(2, "0")}` : " (pas ce mois-ci au rythme actuel)";
+  return `Tranche <b>T${i + 1}</b> : les kWh coûtent <b class="n">${prix} Ar</b>. Passage en T${i + 2} (${T[i + 1][1]} Ar/kWh) dans <b class="n">${fr(reste)} kWh</b>${dans}. Seuls les kWh au-delà du seuil sont facturés plus cher.`;
+}
 function compteurHTML() {
   const c = D.compteur; if (!c) return "";
-  const k = v => v == null ? "—" : fr(v, 1) + " kWh";
-  const [mm, yy] = c.moisNom.split("/").map(Number), jm = new Date(yy, mm, 0).getDate(), proj = c.mois / Math.max(1, c.joursMois) * jm;
-  const PM = c.parMois || {}, annAr = Object.entries(PM).filter(([m]) => m.endsWith("/" + c.anneeNom)).reduce((a, [m, v]) => a + factureJirama(m === c.moisNom ? proj : v), 0);
-  return G("Compteur maison",
-    R("Index", `<b>${k(c.index)}</b>`, "consommé depuis le " + c.depuis + " · sortie onduleur") +
-    R("Aujourd’hui", k(c.aujourdhui), "depuis 00:00") +
-    R("Ce mois-ci", k(c.mois), `${moisFr(c.moisNom)} · ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} · ≈ ${fr(c.mois / Math.max(1, c.joursMois), 1)} kWh/jour`, "bl") +
-    R("Fin du mois (projection)", k(proj), `au rythme actuel sur ${jm} jours`) +
-    R("Mois précédent", c.moisPrec == null ? "—" : k(c.moisPrec), c.moisPrec == null ? "pas encore de données" : `${moisFr(c.moisPrecNom)} · ${c.joursMoisPrec} jours`) +
-    R("Cette année", k(c.annee), c.anneeNom + " · depuis le " + c.depuis) +
-    R("Production solaire du mois", k(c.pvMois), "Gospower + Apollo (Apollo mesurés depuis le shunt)", "ac")) +
-  G("Équivalent facture Jirama",
-    R("Ce mois-ci (projection)", ar(factureJirama(proj)), `${k(proj)} au tarif ${JIRAMA.nom}`, "ok") +
-    R("Mois précédent", c.moisPrec == null ? "—" : ar(factureJirama(c.moisPrec)), c.moisPrec == null ? "" : k(c.moisPrec)) +
-    R("Cette année", ar(annAr), `${c.anneeNom} · mois en cours projeté`, "ok") +
-    R("Prix moyen", ar(factureJirama(proj) / Math.max(1, proj)) + "/kWh", "tranches 370 · 600 · 909 Ar + prime fixe 6 kW + redevance")) +
-  `<p class="foot">Estimation hors taxes, d’après la grille Jirama résidentielle « Confort » (ORE, 06/2021). C’est ce que tu paierais si ta maison était au réseau.</p>`;
+  const [mm, yy] = c.moisNom.split("/").map(Number), jm = new Date(yy, mm, 0).getDate(), parJour = c.mois / Math.max(1, c.joursMois), proj = parJour * jm;
+  const PM = c.parMois || {}, fiable = c.joursMois >= 7;
+  let h = card("Compteur du mois", compteurReel(c.mois, D.live ? D.live.maison : null, "Maison · " + moisFr(c.moisNom)) +
+    `<div class="odo-s">kWh consommés depuis le 1er du mois · sortie de l’onduleur</div>` +
+    sep(tiles([tile("Aujourd’hui", fr(c.aujourdhui, 1), "kWh", "bl", "depuis 00:00"), tile("Par jour", fr(parJour, 1), "kWh", "bl", `moyenne sur ${c.joursMois} j`), tile("Index total", fr(c.index, 0), "kWh", "", "depuis le " + c.depuis)])) +
+    sep(tiles([tile("Mois précédent", c.moisPrec == null ? "—" : fr(c.moisPrec, 0), c.moisPrec == null ? "" : "kWh", "", c.moisPrec == null ? "pas encore de données" : moisFr(c.moisPrecNom)), tile("Année " + c.anneeNom, fr(c.annee, 0), "kWh", "", "depuis le " + c.depuis)], 2)) +
+    sep(gh(moisFr(c.moisNom) + " face aux tranches Jirama", "kWh/mois") +
+      jauge({ id: "jt", min: 0, max: Math.max(400, Math.ceil(Math.max(proj, c.moisPrec || 0) * 1.12 / 50) * 50), zones: [[0, 130, "ok", "370 Ar"], [130, 300, "warn", "600 Ar"], [300, 1e6, "crit", "909 Ar"]],
+        ticks: [{ v: 0, t: "0" }, { v: 130, t: "130" }, { v: 300, t: "300" }],
+        marks: [{ v: c.mois, t: "auj. " + fr(c.mois), col: "fg" }, { v: proj, t: "fin ≈ " + fr(proj), col: "acc" }].concat(c.moisPrec != null ? [{ v: c.moisPrec, t: "préc. " + fr(c.moisPrec), col: "blue" }] : []) }) +
+      gcap(trancheTxt(c.mois, parJour, mm, yy)) +
+      gcap(fiable ? `Projection au rythme de ${fr(parJour, 1)} kWh/jour sur ${jm} jours.` : `Projection encore peu fiable : ${c.joursMois} jour${c.joursMois > 1 ? "s" : ""} de données (journée en cours comprise). Elle se stabilise après une semaine.`)));
+  // année mois par mois
+  const mois = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0") + "/" + c.anneeNom);
+  const v = mois.map(m => PM[m] != null ? PM[m] : null), gh2 = mois.map(m => m === c.moisNom ? proj : null);
+  h += card("Année " + c.anneeNom + " mois par mois", vbars({ v, ghost: gh2, lab: "JFMAMJJASOND".split(""), top: mois.map((m, i) => m === c.moisNom ? "≈" + fr(proj) : lab(v[i])), col: mois.map(m => m === c.moisNom ? "acc" : "blue"), H: 130, bw: 18 }) +
+    gcap("kWh consommés par la maison. Mois en cours : plein = réel, gris = projection."), "");
+  // facture
+  const parts = factureParts(proj), tot = factureJirama(proj), annAr = Object.entries(PM).filter(([m]) => m.endsWith("/" + c.anneeNom)).reduce((a, [m, x]) => a + factureJirama(m === c.moisNom ? proj : x), 0);
+  h += card("Si la maison était au réseau Jirama", donut(parts.map(p => ({ ...p, txt: ar(p.v) })), fr(Math.round(tot / 1000)) + " k Ar", "ce mois (proj.)") +
+    sep(tiles([tile("Mois préc.", c.moisPrec == null ? "—" : fr(Math.round(factureJirama(c.moisPrec) / 1000)), c.moisPrec == null ? "" : "k Ar", "", c.moisPrec == null ? "pas encore de données" : fr(c.moisPrec) + " kWh"),
+      tile("Année", fr(Math.round(annAr / 1000)), "k Ar", "ok", c.anneeNom + " · mois en cours projeté"), tile("Prix moyen", fr(Math.round(tot / Math.max(1, proj))), "Ar/kWh", "", "tout compris HT")])) +
+    sep(tiles([tile("Solaire ce mois", fr(c.pvMois, 1), "kWh", "ac", "Gospower + Apollo"), tile("Valeur du solaire", fr(Math.round(c.pvMois * tot / Math.max(1, proj) / 1000)), "k Ar", "ok", "au prix moyen ci-dessus")], 2)),
+    `Tarif résidentiel « ${JIRAMA.nom} », grille ORE/Jirama 06/2021, hors taxes : tranches 370 · 600 · 909 Ar, prime fixe ${fr(JIRAMA.primeFixe)} Ar/kW, redevance ${fr(JIRAMA.redevance)} Ar.`);
+  return h;
 }
 function soireesHTML() {
   const S = (D.soirees || []).slice(-14); if (!S.length) return "";
-  const mx = Math.max(...S.map(s => s.kWh || 0)) || 1, gros = S.reduce((a, s) => (s.kWh || 0) > (a.kWh || 0) ? s : a, S[0]);
-  const moy = S.reduce((a, s) => a + (s.kWh || 0), 0) / S.length;
-  const bars = `<div class="sbars">${S.map(s => `<div title="${s.date}"><em class="n">${fr(s.kWh, 1)}</em><b class="${s === gros ? "hot" : ""}" style="height:${Math.max(3, s.kWh / mx * 70)}px"></b><span>${s.date.slice(0, 5)}</span></div>`).join("")}</div>`;
+  const gros = S.reduce((a, s) => (s.kWh || 0) > (a.kWh || 0) ? s : a, S[0]), moy = S.reduce((a, s) => a + (s.kWh || 0), 0) / S.length, der = S[S.length - 1];
   const E = D.energie, res = E ? E.utilisable : null, n = res != null && gros.kWh ? res / gros.kWh : null;
-  const lec = n == null ? "" : n >= 2 ? ["ok", `La réserve actuelle couvre ${fr(Math.floor(n))} soirées comme la plus grosse`] : n >= 1 ? ["wa", "La réserve actuelle couvre une seule grosse soirée : rechargez bien la veille"] : ["bad", "La réserve actuelle ne couvre pas une soirée comme la plus grosse"];
-  const der = S[S.length - 1];
-  return `<div class="sec"><div class="h">Soirées 17 h – 02 h · ${S.length} dernières</div><div class="grp">${bars}` +
-    R("Plus grosse soirée", fr(gros.kWh, 2) + " kWh", `${gros.date} · pic ${gros.pic != null ? fr(gros.pic) + " W" : "—"}`, "ac") +
-    R("Soirée moyenne", fr(moy, 2) + " kWh") +
-    R("Dernière nuit (17 h – 06 h)", der.dechNuit != null ? fr(der.dechNuit, 2) + " kWh déchargés" : "—", der.socMin != null ? `${der.date} · SOC mini ${fr(der.socMin)} %` : der.date) +
-    (res != null ? R("Réserve avant 50 % maintenant", fr(res, 1) + " kWh", lec[1], lec[0]) : "") + `</div></div>`;
+  let h = vbars({ v: S.map(s => s.kWh), lab: S.map(s => S.length > 7 ? s.date.slice(0, 2) : s.date.slice(0, 5)), col: S.map(s => s === gros ? "acc" : s.socMin != null && s.socMin < 60 ? "crit" : "blue"),
+                  avg: S.length > 1 ? moy : null, avgTxt: "moy. " + fr(moy, 1), H: 132, bw: 24 }) + gcap("kWh consommés entre 17 h et 02 h. Orange : la plus grosse soirée.") +
+    sep(tiles([tile("Plus grosse", fr(gros.kWh, 1), "kWh", "ac", `${gros.date.slice(0, 5)} · pic ${gros.pic != null ? fr(gros.pic) + " W" : "—"}`), tile("Moyenne", fr(moy, 1), "kWh", "", S.length + " soirées"),
+      tile("Dernière nuit", der.dechNuit != null ? fr(der.dechNuit, 1) : "—", "kWh", "", der.socMin != null ? `déchargés · SOC mini ${fr(der.socMin)} %` : "déchargés")]));
+  if (res != null) {
+    const nb = Math.floor(n || 0), W = 340, L = 2, Rr = 338, k = Math.min(nb, 24); let s = `<rect x="${L}" y="4" width="${Rr - L}" height="16" rx="8" style="fill:var(--s2)"/>`;
+    const frac = Math.min(1, k / Math.max(1, Math.ceil(n || 1)));
+    s += `<rect x="${L}" y="4" width="${(Rr - L) * (n >= 1 ? n / Math.ceil(n) : n)}" height="16" rx="8" style="fill:var(--${n >= 2 ? "ok" : n >= 1 ? "warn" : "crit"});opacity:.8"/>`;
+    const segs = Math.max(1, Math.ceil(n)); for (let i = 1; i < segs; i++) if (segs <= 24) s += `<line x1="${L + (Rr - L) * i / segs}" x2="${L + (Rr - L) * i / segs}" y1="4" y2="20" style="stroke:var(--s1)" stroke-width="2"/>`;
+    h += sep(gh("Réserve avant 50 % maintenant", fr(res, 1) + " kWh") + `<div class="gbox"><svg class="gx" viewBox="0 0 ${W} 24">${s}</svg></div>` +
+      gcap(n >= 2 ? `≈ <b class="n ok">${fr(nb)}</b> soirées comme la plus grosse (chaque case = ${fr(gros.kWh, 1)} kWh).` : n >= 1 ? "Une seule grosse soirée couverte : rechargez bien la veille." : "Ne couvre pas une soirée comme la plus grosse."));
+  }
+  return card(`Soirées 17 h – 02 h · ${S.length} dernière${S.length > 1 ? "s" : ""}`, h);
+}
+function profilCarte() {
+  const P = D.profil; if (!P || !P.moyW || !P.moyW.some(v => v != null)) return "";
+  const base = moyH(P.moyW, 2, 6), soir = moyH(P.moyW.slice(17).concat(P.moyW.slice(0, 2)), 0, 9), jour = moyH(P.moyW, 6, 17), tot = moyH(P.moyW, 0, 24);
+  return card("Consommation maison heure par heure", gh(`Moyenne des ${P.jours} derniers jours`, "kW") + profilHTML(P.moyW, P.aujW.map(v => v == null ? null : v), { ghost: null }) +
+    gcap("Gris foncé : nuit 02–06 h (fond permanent) · bleu : journée · orange : soirée 17–02 h.") +
+    sep(tiles([tile("Fond nuit", base != null ? fr(base) : "—", "W", "mu", "02–06 h · ne s’arrête jamais"), tile("Journée", jour != null ? fr(jour) : "—", "W", "bl", "06–17 h"), tile("Soirée", soir != null ? fr(soir) : "—", "W", "ac", "17–02 h")])) +
+    sep(tiles([tile("Moyenne 24 h", tot != null ? fr(tot) : "—", "W", "", tot != null ? `≈ ${fr(tot * 24 / 1000, 1)} kWh/jour` : ""), tile("Aujourd’hui", P.moyAujW != null ? fr(P.moyAujW) : "—", "W", "", "moyenne depuis 00:00")], 2)),
+    "Une moyenne seule varie trop d’un jour à l’autre : le profil par heure montre ce qui tourne en permanence et ce qui s’ajoute le soir.");
 }
 function renderHisto() {
   const h = D.histo; if (!h) return;
-  $("hisBody").innerHTML = compteurHTML() + soireesHTML() +
-    G("Décharges", R("La plus profonde", sg(h.plusProfonde) + " Ah") + R("Dernière", sg(h.derniere) + " Ah") + R("Moyenne", sg(h.moyenne) + " Ah")) +
-    G("Énergie", R("Déchargée", fr(h.kWhDech, 2) + " kWh") + R("Chargée", fr(h.kWhCharge, 2) + " kWh")) +
-    G("Charge", R("Cycles", h.cycles) + R("Depuis la dernière charge complète", h.depuisPleine)) +
-    G("Tension", R("Minimum", fr(h.vMin, 2) + " V") + R("Maximum", fr(h.vMax, 2) + " V", "", h.vMax > 57.8 ? "bad" : "") +
-      R("Alarmes tension basse", h.alBasse) + R("Alarmes tension élevée", h.alHaute, "", h.alHaute ? "bad" : ""));
+  const resAh = CAP * (100 - FLOOR) / 100, d = v => ({ v, txt: fr(Math.abs(v)) + " Ah", s: fr(Math.abs(v) / CAP * 100) + " % de la capacité" });
+  $("hisBody").innerHTML = compteurHTML() + profilCarte() + soireesHTML() +
+    card("Décharges", hbars([{ k: "La plus profonde", c: "acc", ...d(h.plusProfonde) }, { k: "Dernière", c: "blue", ...d(h.derniere) }, { k: "Moyenne", c: "mut", ...d(h.moyenne) }], resAh) +
+      gcap(`Barre pleine = ${fr(resAh)} Ah, la limite de décharge à ${FLOOR} %.`)) +
+    card("Tension", jauge({ id: "jv", min: 46, max: 60, zones: [[46, 48, "crit"], [48, 57, "ok"], [57, 57.8, "warn"], [57.8, 60, "crit"]],
+        ticks: [46, 48, 50, 52, 54, 56, 58, 60].map(v => ({ v, t: v })), marks: [{ v: h.vMin, t: "min " + fr(h.vMin, 2), col: "blue" }, { v: h.vMax, t: "max " + fr(h.vMax, 2), col: h.vMax > 57.8 ? "crit" : "acc" }] }) +
+      sep(tiles([tile("Alarmes basse", h.alBasse, "", h.alBasse ? "bad" : "ok", "< 48,0 V"), tile("Alarmes haute", h.alHaute, "", h.alHaute ? "bad" : "ok", "> 57,8 V")], 2))) +
+    card("Énergie et cycles", hbars([{ k: "Chargée", v: h.kWhCharge, txt: fr(h.kWhCharge, 1) + " kWh", c: "ok" }, { k: "Déchargée", v: h.kWhDech, txt: fr(h.kWhDech, 1) + " kWh", c: "acc" }]) +
+      sep(tiles([tile("Cycles", h.cycles, "", "", "retours à 100 %"), tile("Dernière pleine", h.depuisPleine || "—", "", "", "il y a")], 2)));
+  roulerCompteur();
 }
+// ----- Courbes : mini, moyenne, maxi de la série choisie -----
+function cstat() {
+  const el = $("cstat"); if (!el) return;
+  if (!D || !D.serie || D.serie.length < 2) { el.innerHTML = ""; return; }
+  const S = sliceDay(D.serie, span);
+  el.innerHTML = pick.filter(Boolean).map((key, idx) => {
+    const [nom, u, dec, f] = SER[key], vals = S.map(f).filter(v => v != null && !isNaN(v)); if (!vals.length) return "";
+    const mn = Math.min(...vals), mx = Math.max(...vals), mo = vals.reduce((a, v) => a + v, 0) / vals.length, c = idx ? "bl" : "ac";
+    return card(nom, tiles([tile("Mini", fr(mn, dec), u, c), tile("Moyenne", fr(mo, dec), u, c), tile("Maxi", fr(mx, dec), u, c)]));
+  }).join("");
+}
+
+$("bDays").addEventListener("click", e => { const k = e.target.closest("button"); if (!k) return; bDay = +k.dataset.d; renderBilan(); });
+
 function renderSettings() {
   const A = [["SOC bas", "50 %, retombe à 55 %"], ["Tension avant lever", "< 48,7 V corrigée"], ["Tension basse", "< 48,0 V"], ["Tension élevée", "> 57,0 V (57,8 V en égalisation)"], ["Absorption non atteinte", "dans la journée"], ["Shunt muet", "> 30 min sans mesure"]];
   $("alList").innerHTML = A.map(([k, s]) => R(k, "Active", s, "ok")).join("");
@@ -527,8 +739,8 @@ function chart() {
   $("chart").innerHTML = o; geo = { L, Rr, n, X, S, Ys, W };
 }
 $("picks").addEventListener("click", e => { const k = e.target.dataset.k; if (!k) return;
-  if (pick[0] === k) { if (pick[1]) pick = [pick[1], null]; } else if (pick[1] === k) pick = [pick[0], null]; else pick = [pick[0], k]; chart(); });
-$("range").addEventListener("click", e => { const h = e.target.dataset.h; if (!h) return; span = h; [...$("range").children].forEach(b => b.setAttribute("aria-pressed", b === e.target)); chart(); });
+  if (pick[0] === k) { if (pick[1]) pick = [pick[1], null]; } else if (pick[1] === k) pick = [pick[0], null]; else pick = [pick[0], k]; chart(); cstat(); });
+$("range").addEventListener("click", e => { const h = e.target.dataset.h; if (!h) return; span = h; [...$("range").children].forEach(b => b.setAttribute("aria-pressed", b === e.target)); chart(); cstat(); });
 function scrub(ev) { if (!geo) return; const bx = $("cbox").getBoundingClientRect(), sv = $("chart").getBoundingClientRect(), p = ev.touches ? ev.touches[0] : ev;
   const x = (p.clientX - sv.left) / sv.width * geo.W, k = Math.max(0, Math.min(geo.n - 1, Math.round((x - geo.L) / (geo.Rr - geo.L) * (geo.n - 1)))), cx = geo.X(k);
   const c = $("cur"); c.setAttribute("x1", cx); c.setAttribute("x2", cx); c.setAttribute("visibility", "visible");
@@ -542,7 +754,7 @@ function unscrub() { $("tip").style.display = "none"; const c = $("cur"); c && c
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x === b));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + b.dataset.v));
-  $("title").textContent = b.dataset.t; $("main").scrollTop = 0; if (b.dataset.v === "cou") chart();
+  $("title").textContent = b.dataset.t; $("main").scrollTop = 0; if (b.dataset.v === "cou") { chart(); cstat(); }
 }));
 $("openSet").onclick = () => $("sheet").classList.add("on");
 $("closeSet").onclick = $("bd").onclick = () => $("sheet").classList.remove("on");
