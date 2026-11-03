@@ -205,6 +205,9 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .disq i{position:absolute;top:0;bottom:0;width:7px;left:-8px;background:#c0261c;border-radius:2px;animation:disq 8s linear infinite}
 @keyframes disq{0%{left:-8px;opacity:0}8%{opacity:1}50%{left:58px;opacity:1}50.01%{opacity:0}100%{left:58px;opacity:0}}
 .odo-s{text-align:center;font-size:11.5px;color:var(--mut);padding:2px 14px 12px}
+.exp{display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;background:color-mix(in srgb,var(--ok) 16%,var(--s1));color:var(--ok);font:600 15px var(--f);padding:13px;cursor:pointer}
+.exp svg{width:18px;height:18px}
+.alert.sun{background:color-mix(in srgb,var(--warn) 16%,var(--s1))} .alert.sun .ic{background:var(--warn);color:#2b2100}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -236,6 +239,7 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
     <div id="batAlert"></div>
     <div class="sec" id="enSec"><div class="h">Énergie dans la batterie</div><div class="grp" id="enGrp"></div></div>
     <div class="sec" id="jourSec"><div class="h">Aujourd’hui depuis 00:00</div><div class="grp" id="jourGrp"></div></div>
+    <div id="soirSec"></div>
     <div class="sec"><div class="h">Ce matin au repos</div>
       <div class="grp">
         <div class="row"><span class="k">Table Exide<small id="restSub">—</small></span><span class="v n" id="restSoc">—</span></div>
@@ -414,6 +418,7 @@ function renderCards() {
   }
   $("jourSec").style.display = J ? "" : "none";
   if (J) $("jourGrp").innerHTML = jourHTML(J);
+  $("soirSec").innerHTML = soirDemainHTML();
 }
 // ===== rendu =====
 function render() {
@@ -439,7 +444,7 @@ function renderBat() {
   $("kAh").innerHTML = `${sg(ah)}`;
   $("kT").innerHTML = d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
   const al = d.alarmes || [];
-  $("batAlert").innerHTML = al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : "");
+  $("batAlert").innerHTML = surplusHTML() + (al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : ""));
   const r = d.jours && d.jours[0] && d.jours[0].resume && d.jours[0].resume.batterie ? d.jours[0].resume : null;
   if (r && r.ceMatin && r.ceMatin.avantLever) {
     const al2 = r.ceMatin.avantLever, s = socTable(al2.V, al2.conso_kW);
@@ -535,6 +540,102 @@ function profilHTML(main, ref, opts) {
 }
 const moyH = (A, a, b) => { const x = A.slice(a, b).filter(v => v != null); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : null; };
 
+// ===== surplus solaire, ce soir / demain, rendement des chaînes, export Excel =====
+function surplusHTML() {
+  const L = D.live; if (!L) return "";
+  const h = new Date().getHours(), pv = (L.pvG || 0) + (L.apollo || 0);
+  const pleine = /float|absor/i.test(String(L.etape || "")) || (D.soc != null && D.soc >= 98);
+  if (!pleine || h < 8 || h >= 16 || pv < 100) return "";
+  return `<div class="alert okb sun"><span class="ic">☀</span><p>Surplus solaire disponible maintenant
+    <small>Batterie pleine (${L.etape ? String(L.etape).replace(/ charge$/i, "") : fr(D.soc) + " %"}) : le Gospower bride ses panneaux. Ce que tu allumes maintenant (chauffe-eau, four, surpresseur, lessive) est gratuit et ne vide pas la batterie. PV ${kw(pv)} · maison ${kw(L.maison || 0)}.</small></p></div>`;
+}
+function soirDemainHTML() {
+  const E = D.energie, S = D.soirees || [], P = D.prevision, H = D.historique || [];
+  if (!E && !P) return "";
+  let h = "";
+  if (E) {
+    const gros = S.length ? Math.max(...S.map(s => s.kWh || 0)) : null, moy = S.length ? S.reduce((a, s) => a + (s.kWh || 0), 0) / S.length : null;
+    h += tiles([tile("Ce soir", fr(E.utilisable, 1), "kWh", E.utilisable > (gros || 0) ? "ok" : "wa", "disponibles avant 50 %"),
+      tile("Record", gros != null ? fr(gros, 1) : "—", gros != null ? "kWh" : "", "ac", S.length ? `sur ${S.length} soirée${S.length > 1 ? "s" : ""} mesurée${S.length > 1 ? "s" : ""}` : ""),
+      tile("Moyenne", moy != null ? fr(moy, 1) : "—", moy != null ? "kWh" : "", "", "par soirée 17 h – 02 h")]);
+  }
+  if (P && P.jours && P.jours.length > 1) {
+    const d = P.jours[1], tot = ["pv1", "pv2", "pv3"].reduce((a, k) => a + (d[k] || 0), 0);
+    const M = H.filter(x => x.maison != null).slice(-7), cm = M.length ? M.reduce((a, x) => a + x.maison, 0) / M.length : null;
+    h += sep(gh("Demain " + d.date.slice(0, 5) + " · prévision météo", fr(d.rad, 1) + " kWh/m²") + pvPile(d.pv1, d.pv2, d.pv3) +
+      tiles([tile("Solaire prévu", fr(tot, 1), "kWh", "ac", d.pv3 == null ? "PV1 + PV2 (PV3 pas encore calé)" : "PV1 + PV2 + PV3"),
+             tile("Maison (réel)", cm != null ? fr(cm, 1) : "—", cm != null ? "kWh/j" : "", "bl", M.length ? `sur les ${M.length} derniers jours` : "")], 2) +
+      gcap((cm != null ? (tot >= cm * 1.3 ? "Assez de soleil prévu pour couvrir la maison et recharger la batterie." : tot >= cm ? "Soleil prévu juste suffisant pour la maison : peu de recharge." : "Soleil prévu insuffisant pour la maison : la batterie va descendre, évite une grosse soirée.") + " " : "") +
+        `Rayonnement Open-Meteo × rendement mesuré de tes chaînes (calé sur ${P.calage.pv1 || 0} j).` + (P.lieu.defaut ? " Lieu par défaut : Antananarivo." : "")));
+  }
+  return h ? card("Ce soir et demain", h) : "";
+}
+function rendementHTML() {
+  const P = D.prevision; if (!P || !P.perf || !P.perf.length) return "";
+  const R = P.perf, moy = k => { const x = R.map(r => r[k]).filter(v => v != null); return x.length ? x.reduce((a, v) => a + v, 0) / x.length : null; };
+  const m1 = moy("y1"), m2 = moy("y2"), m3 = moy("y3"), rd = moy("rad"), mx = Math.max(m1 || 0, m2 || 0, m3 || 0, rd || 0) || 1;
+  const it = (k, v, c, n) => ({ k, s: n, v, c, txt: v == null ? "—" : fr(v, 2) + " kWh/kWc" });
+  const ecart = m1 && m2 ? (m1 / m2 - 1) * 100 : null;
+  return card("Rendement des chaînes PV", hbars([it("PV1", m1, "acc", `${PANNEAUX_UI.pv1} × 585 W`), it("PV2", m2, "warn", `${PANNEAUX_UI.pv2} × 585 W`), it("PV3 · Apollo", m3, "pv3", P.kWc.pv3 ? "" : "nb de panneaux à renseigner"),
+      { k: "Soleil reçu", s: "rayonnement", v: rd, c: "mut", txt: rd == null ? "—" : fr(rd, 2) + " kWh/m²" }], mx) +
+    sep(tiles([tile("Écart PV1 / PV2", ecart == null ? "—" : sg(ecart, 0), ecart == null ? "" : "%", ecart != null && Math.abs(ecart) > 15 ? "bad" : "ok", Math.abs(ecart || 0) > 15 ? "à vérifier : saleté, ombre, connecteur" : "chaînes cohérentes"),
+      tile("Jours comparés", R.length, "", "", "moyenne kWh par kWc installé")], 2)),
+    "kWh produits par kWc de panneaux, jour par jour. Une chaîne qui produit nettement moins que l’autre par kWc a un problème. Quand la batterie est pleine, le Gospower bride PV1 et PV2 ensemble : compare-les entre eux plutôt qu’au soleil reçu.");
+}
+const PANNEAUX_UI = { pv1: 9, pv2: 6 };
+
+// --- export Excel (.xlsx écrit directement, sans bibliothèque) ---
+function crc32(b) { let c, t = crc32.t || (crc32.t = Array.from({ length: 256 }, (_, n) => { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; })); let x = -1; for (let i = 0; i < b.length; i++) x = (x >>> 8) ^ t[(x ^ b[i]) & 255]; return (x ^ -1) >>> 0; }
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  const u16 = v => [v & 255, (v >> 8) & 255], u32 = v => [v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >>> 24) & 255];
+  files.forEach(([name, txt]) => {
+    const n = enc.encode(name), d = enc.encode(txt), c = crc32(d);
+    const h = [0x50, 0x4b, 3, 4, ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(d.length), ...u32(d.length), ...u16(n.length), ...u16(0)];
+    parts.push(new Uint8Array(h), n, d);
+    cen.push(new Uint8Array([0x50, 0x4b, 1, 2, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(d.length), ...u32(d.length), ...u16(n.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), n);
+    off += h.length + n.length + d.length;
+  });
+  const cl = cen.reduce((a, x) => a + x.length, 0);
+  return new Blob([...parts, ...cen, new Uint8Array([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...u16(files.length), ...u16(files.length), ...u32(cl), ...u32(off), 0, 0])], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function xlsx(sheets) {   // sheets : [[nom, [[ligne d'en-tête], [valeurs]...]]]
+  const x = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const col = i => { let s = ""; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const ws = rows => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${rows[0].map((_, i) => `<col min="${i + 1}" max="${i + 1}" width="${i ? 16 : 14}" customWidth="1"/>`).join("")}</cols><sheetData>${rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+      const ref = col(ci) + (ri + 1); if (v == null || v === "") return "";
+      return typeof v === "number" && isFinite(v) ? `<c r="${ref}"${ri ? ' s="2"' : ""}><v>${v}</v></c>` : `<c r="${ref}" t="inlineStr"${ri ? "" : ' s="1"'}><is><t>${x(v)}</t></is></c>`; }).join("")}</row>`).join("")}</sheetData>${rows.length > 1 ? `<autoFilter ref="A1:${col(rows[0].length - 1)}${rows.length}"/>` : ""}</worksheet>`;
+  const files = [
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map(([n], i) => `<sheet name="${x(n)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/styles.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+    ...sheets.map(([, rows], i) => [`xl/worksheets/sheet${i + 1}.xml`, ws(rows)])];
+  return zip(files);
+}
+function exporterExcel() {
+  const H = D.historique || [], c = D.compteur || {}, P = D.profil, Pr = D.prevision;
+  const n = v => v == null || v === "" ? "" : Number(v);
+  const jours = [["Date", "Maison kWh", "PV1 kWh", "PV2 kWh", "PV3 Apollo kWh", "Solaire total kWh", "Charge batterie kWh", "Décharge batterie kWh", "Soirée 17-02 h kWh", "Pic soirée W", "Décharge nuit kWh", "SOC mini nuit %"]]
+    .concat(H.map(h => [h.date, n(h.maison), n(h.pv1), n(h.pv2), n(h.pv3), h.pv1 != null || h.pv2 != null ? +((h.pv1 || 0) + (h.pv2 || 0) + (h.pv3 || 0)).toFixed(2) : "", n(h.charge), n(h.decharge), n(h.soir), n(h.pic), n(h.dechNuit), n(h.socMin)]));
+  if (D.jour) jours.push([dmy(D.updatedAt) + " (en cours)", n(D.jour.maison), n(D.jour.pv1), n(D.jour.pv2), n(D.jour.pv3), "", n(D.jour.chargeTot), n(D.jour.dechargeTot), "", "", "", ""]);
+  const ab = JIRAMA.primeFixe * JIRAMA.psKW + JIRAMA.redevance;
+  const mois = [["Mois", "Maison kWh", "Énergie Ar HT", "Abonnement Ar HT", "Total Jirama Ar HT", "Total €", "Tranche atteinte"]]
+    .concat(Object.entries(c.parMois || {}).sort((a, b) => a[0].split("/").reverse().join("").localeCompare(b[0].split("/").reverse().join(""))).map(([m, k]) => {
+      const t = factureJirama(k), tr = JIRAMA.tranches.findIndex(([haut]) => k < haut) + 1;
+      return [m + (m === c.moisNom ? " (en cours)" : ""), +k.toFixed(2), t - ab, ab, t, +(t / EUR).toFixed(2), "T" + tr]; }));
+  const prof = [["Heure", "Moyenne W (" + (P ? P.jours : 0) + " jours)", "Aujourd'hui W"]].concat(P ? P.moyW.map((v, h) => [String(h).padStart(2, "0") + " h", n(v), n(P.aujW[h])]) : []);
+  const prev = [["Date", "Rayonnement kWh/m²", "PV1 prévu kWh", "PV2 prévu kWh", "PV3 prévu kWh"]].concat(Pr && Pr.jours ? Pr.jours.map(j => [j.date, n(j.rad), n(j.pv1), n(j.pv2), n(j.pv3)]) : []);
+  const rend = [["Date", "Rayonnement kWh/m²", "PV1 kWh/kWc", "PV2 kWh/kWc", "PV3 kWh/kWc"]].concat(Pr && Pr.perf ? Pr.perf.map(j => [j.date, n(j.rad), n(j.y1), n(j.y2), n(j.y3)]) : []);
+  const tarif = [["Élément", "Valeur"], ["Tarif", JIRAMA.nom + " · grille ORE/Jirama 06/2021, HT"], ["T1 jusqu'à 130 kWh (Ar/kWh)", 370], ["T2 jusqu'à 300 kWh (Ar/kWh)", 600], ["T3 au-delà (Ar/kWh)", 909],
+    ["Prime fixe (Ar/kW/mois)", JIRAMA.primeFixe], ["Puissance souscrite supposée (kW)", JIRAMA.psKW], ["Redevance (Ar/mois)", JIRAMA.redevance], ["Taux de change (Ar pour 1 €)", EUR], ["Export du", dmy(D.updatedAt) + " " + hm(D.updatedAt)]];
+  const blob = xlsx([["Jours", jours], ["Mois et Jirama", mois], ["Profil horaire", prof], ["Prévision", prev], ["Rendement PV", rend], ["Tarif", tarif]]);
+  const a = document.createElement("a"), d = dmy(D.updatedAt).split("/");
+  a.href = URL.createObjectURL(blob); a.download = `Batterie_OPzS_${d[2]}-${d[1]}-${d[0]}.xlsx`; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+
 // ----- Batterie : journée en cours -----
 function jourHTML(J) {
   const k = v => v == null ? "—" : fr(v, 1), pv = J.pvTotal != null ? J.pvTotal : J.pvG;
@@ -548,7 +649,7 @@ function jourHTML(J) {
   if (P && P.aujW && P.aujW.some(v => v != null)) {
     const rythme = P.moyAujW != null ? fr(P.moyAujW * 24 / 1000, 1) : "—";
     h += sep(gh("Maison heure par heure", "kW · aujourd’hui") + profilHTML(P.aujW, P.moyW) +
-      gcap(`Moyenne aujourd’hui <b class="n">${P.moyAujW != null ? fr(P.moyAujW) + " W" : "—"}</b> · à ce rythme ≈ ${rythme} kWh/jour. En gris : moyenne des ${P.jours || 0} derniers jours.`));
+      gcap(`Puissance moyenne mesurée aujourd’hui <b class="n">${P.moyAujW != null ? fr(P.moyAujW) + " W" : "—"}</b>. En gris : moyenne mesurée des ${P.jours || 0} derniers jours.`));
   }
   return h;
 }
@@ -687,13 +788,13 @@ function profilCarte() {
   return card("Consommation maison heure par heure", gh(`Moyenne des ${P.jours} derniers jours`, "kW") + profilHTML(P.moyW, P.aujW.map(v => v == null ? null : v), { ghost: null }) +
     gcap("Gris foncé : nuit 02–06 h (fond permanent) · bleu : journée · orange : soirée 17–02 h.") +
     sep(tiles([tile("Fond nuit", base != null ? fr(base) : "—", "W", "mu", "02–06 h · ne s’arrête jamais"), tile("Journée", jour != null ? fr(jour) : "—", "W", "bl", "06–17 h"), tile("Soirée", soir != null ? fr(soir) : "—", "W", "ac", "17–02 h")])) +
-    sep(tiles([tile("Moyenne 24 h", tot != null ? fr(tot) : "—", "W", "", tot != null ? `≈ ${fr(tot * 24 / 1000, 1)} kWh/jour` : ""), tile("Aujourd’hui", P.moyAujW != null ? fr(P.moyAujW) : "—", "W", "", "moyenne depuis 00:00")], 2)),
+    sep(tiles([tile("Moyenne 24 h", tot != null ? fr(tot) : "—", "W", "", tot != null ? `soit ${fr(tot * 24 / 1000, 1)} kWh/jour mesurés` : ""), tile("Aujourd’hui", P.moyAujW != null ? fr(P.moyAujW) : "—", "W", "", "moyenne depuis 00:00")], 2)),
     "Une moyenne seule varie trop d’un jour à l’autre : le profil par heure montre ce qui tourne en permanence et ce qui s’ajoute le soir.");
 }
 function renderHisto() {
   const h = D.histo; if (!h) return;
   const resAh = CAP * (100 - FLOOR) / 100, d = v => ({ v, txt: fr(Math.abs(v)) + " Ah", s: fr(Math.abs(v) / CAP * 100) + " % de la capacité" });
-  $("hisBody").innerHTML = compteurHTML() + profilCarte() + soireesHTML() +
+  $("hisBody").innerHTML = `<button class="exp" onclick="exporterExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exporter en Excel</button>` + compteurHTML() + profilCarte() + soireesHTML() + rendementHTML() +
     card("Décharges", hbars([{ k: "La plus profonde", c: "acc", ...d(h.plusProfonde) }, { k: "Dernière", c: "blue", ...d(h.derniere) }, { k: "Moyenne", c: "mut", ...d(h.moyenne) }], resAh) +
       gcap(`Barre pleine = ${fr(resAh)} Ah, la limite de décharge à ${FLOOR} %.`)) +
     card("Tension", jauge({ id: "jv", min: 46, max: 60, zones: [[46, 48, "crit"], [48, 57, "ok"], [57, 57.8, "warn"], [57.8, 60, "crit"]],
