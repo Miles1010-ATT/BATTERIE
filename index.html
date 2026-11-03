@@ -121,6 +121,22 @@ nav button[aria-selected="true"]{color:var(--acc);background:color-mix(in srgb,v
 @keyframes up{from{transform:translateY(100%)}}
 @keyframes fd{from{opacity:0}}
 button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+/* schéma des flux */
+.flow{background:var(--s1);border-radius:18px;padding:10px 8px 6px}
+.flow svg{width:100%;height:auto;display:block}
+.flow .pill{fill:var(--s2)}
+.flow .nm{font:600 10.5px var(--f);fill:var(--mut)}
+.flow .vl{font:700 17px var(--r);fill:var(--fg)}
+.flow .vl.dim{fill:var(--mut);font-size:14px}
+.flow .ln{fill:none;stroke:var(--sep);stroke-width:3;stroke-linecap:round}
+.flow .fx{fill:none;stroke-linecap:round;stroke-dasharray:3 9;animation:flw linear infinite}
+.flow .fx.rev{animation-direction:reverse}
+.flow .fx.off{display:none}
+@keyframes flw{to{stroke-dashoffset:-24}}
+.flow .cap{font-size:11px;color:var(--mut);text-align:center;padding:2px 0 4px}
+.bar{height:8px;border-radius:4px;background:var(--s2);margin:0 16px 14px;overflow:hidden}
+.bar b{display:block;height:100%;border-radius:4px;background:var(--acc);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.bar b.mk{background:var(--ok)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -134,6 +150,7 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 
   <!-- BATTERIE -->
   <section class="view on" id="v-bat">
+    <div class="flow" id="flow"><svg id="flowSvg" viewBox="0 0 340 258"></svg><div class="cap n" id="flowCap">—</div></div>
     <div class="hero">
       <div class="ring">
         <svg viewBox="0 0 200 200"><circle id="rT" cx="100" cy="100" r="88" fill="none" stroke-width="10" stroke-linecap="round"/>
@@ -149,6 +166,8 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
       <div class="kpi"><b class="n" id="kT">—</b><span>Avant 50 %</span></div>
     </div>
     <div id="batAlert"></div>
+    <div class="sec" id="enSec"><div class="h">Énergie dans la batterie</div><div class="grp" id="enGrp"></div></div>
+    <div class="sec" id="jourSec"><div class="h">Aujourd’hui depuis 00:00</div><div class="grp" id="jourGrp"></div></div>
     <div class="sec"><div class="h">Ce matin au repos</div>
       <div class="grp">
         <div class="row"><span class="k">Table Exide<small id="restSub">—</small></span><span class="v n" id="restSoc">—</span></div>
@@ -237,6 +256,9 @@ function simulation() {
       { date: "01/11/2026", resume: RESUME_0111, shunt: { charge: 4.76, decharge: 5.59, apollo: null } },
       { date: "02/11/2026", resume: null, partiel: true, shunt: { charge: 4.76, decharge: 4.96, apollo: null } }
     ],
+    live: { t: new Date(L.t).toISOString(), pvG: 2350, maison: 640, battG: 1450, batt: 1450, apollo: null, etape: "Bulk charge", shunt: false },
+    jour: { pvG: 6.4, apollo: null, pvTotal: null, maison: 4.1, chargeTot: 3.9, dechargeTot: 1.6, chargeG: 3.9, dechargeG: 1.6, shunt: false },
+    energie: { plein: 73.4, stocke: +(L.soc / 100 * 73.44).toFixed(1), utilisable: +(Math.max(0, L.soc - 50) / 100 * 73.44).toFixed(1), estime: true },
     histo: { plusProfonde: -162, derniere: -108, moyenne: -135, kWhDech: 10.55, kWhCharge: 9.52, cycles: 2, depuisPleine: "6 h 10", vMin: 49.61, vMax: 58.40, alBasse: 0, alHaute: 1 } };
 }
 let D = null;
@@ -248,6 +270,81 @@ async function load() {
   render();
 }
 
+
+// ===== chiffres animés =====
+const TW = new WeakMap();
+function anim(el, to, fmt, ms = 700) {
+  if (!el) return; if (to == null || isNaN(to)) { el.textContent = "—"; TW.delete(el); return; }
+  const from = TW.has(el) ? TW.get(el) : to, t0 = performance.now(); TW.set(el, to);
+  if (from === to || matchMedia("(prefers-reduced-motion:reduce)").matches) { el.textContent = fmt(to); return; }
+  const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if (k < 1 && TW.get(el) === to) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+const kw = w => Math.abs(w) >= 1000 ? fr(w / 1000, 2) + " kW" : fr(w) + " W";
+
+// ===== schéma des flux =====
+// PV Gospower → Onduleur ↔ Batterie ← PV Apollo ; Onduleur → Maison
+const NODES = { pvG: [20, 8, "PV Gospower"], pvA: [190, 8, "PV Apollo"], ond: [20, 104, "Onduleur"], bat: [190, 104, "Batterie"], mai: [20, 200, "Maison"], sto: [190, 200, "Stockée"] };
+const LINKS = { pvG: [85, 58, 85, 104], pvA: [255, 58, 255, 104], ob: [150, 129, 190, 129], om: [85, 154, 85, 200] };
+let flowBuilt = false;
+function buildFlow() {
+  let o = "";
+  Object.entries(LINKS).forEach(([k, [x1, y1, x2, y2]]) => { o += `<path class="ln" d="M${x1} ${y1}L${x2} ${y2}"/><path class="fx" id="fx-${k}" d="M${x1} ${y1}L${x2} ${y2}"/>`; });
+  Object.entries(NODES).forEach(([k, [x, y, nm]]) => {
+    o += `<rect class="pill" x="${x}" y="${y}" width="130" height="50" rx="14"/>` +
+         `<text class="nm" x="${x + 14}" y="${y + 18}">${nm}</text><text class="vl n" id="fv-${k}" x="${x + 14}" y="${y + 40}">—</text>` +
+         `<text class="nm" id="fs-${k}" x="${x + 116}" y="${y + 18}" text-anchor="end"></text>`;
+  });
+  $("flowSvg").innerHTML = o; flowBuilt = true;
+}
+function setLink(k, w, col, rev) {
+  const p = $("fx-" + k); if (!p) return;
+  const on = w != null && Math.abs(w) >= 20;
+  p.classList.toggle("off", !on); if (!on) return;
+  const a = Math.abs(w), dur = Math.max(.35, 2.4 - Math.log10(a) * .55);       // plus la puissance est forte, plus ça va vite
+  p.style.stroke = col; p.style.strokeWidth = Math.min(5, 2 + a / 1500);
+  p.style.animationDuration = dur.toFixed(2) + "s"; p.classList.toggle("rev", !!rev);
+}
+function renderFlow() {
+  const L = D.live, E = D.energie;
+  $("flow").style.display = L ? "" : "none"; if (!L) return;
+  if (!flowBuilt) buildFlow();
+  const ok = css("--ok"), ac = css("--acc"), bl = css("--blue");
+  anim($("fv-pvG"), L.pvG, kw);
+  const fa = $("fv-pvA");
+  if (L.apollo == null) { fa.textContent = "dès le shunt"; fa.classList.add("dim"); TW.delete(fa); } else { fa.classList.remove("dim"); anim(fa, L.apollo, kw); }
+  $("fv-ond").textContent = L.etape ? String(L.etape).replace(/ charge$/i, "") : "—";
+  $("fs-ond").textContent = "";
+  const bw = L.shunt && L.batt != null ? L.batt : L.battG;                          // batterie : shunt si présent, sinon Gospower
+  anim($("fv-bat"), bw, w => (w > 0 ? "+" : w < 0 ? "−" : "") + kw(Math.abs(w)));
+  $("fs-bat").textContent = D.soc != null ? fr(D.soc) + " %" : "";
+  anim($("fv-mai"), L.maison, kw);
+  if (E) { anim($("fv-sto"), E.stocke, v => fr(v, 1) + " kWh"); $("fs-sto").textContent = "/ " + fr(E.plein) + (E.estime ? " · est." : ""); }
+  setLink("pvG", L.pvG, ac); setLink("pvA", L.apollo, ac);
+  setLink("ob", L.battG, L.battG >= 0 ? ok : bl, L.battG < 0);                    // charge → vers la batterie ; décharge → vers l'onduleur
+  setLink("om", L.maison, bl);
+  $("flowCap").textContent = `Gospower à ${hm(L.t)}` + (L.shunt ? ` · shunt à ${hm(D.updatedAt)}` : " · portail Solar of Things, 5 min");
+}
+function renderCards() {
+  const E = D.energie, J = D.jour;
+  $("enSec").style.display = E ? "" : "none";
+  if (E) {
+    $("enGrp").innerHTML = R("Stockée", `<span id="eS">—</span>`, `sur ${fr(E.plein, 1)} kWh · ${fr(CAP)} Ah × 48 V` + (E.estime ? " · SOC estimé" : "")) +
+      `<div class="bar"><b id="eBar" style="width:0%"></b></div>` +
+      R("Utilisable avant 50 %", `<span id="eU">—</span>`, "réserve jusqu’à la limite de décharge", "ok");
+    anim($("eS"), E.stocke, v => fr(v, 1) + " kWh"); anim($("eU"), E.utilisable, v => fr(v, 1) + " kWh");
+    requestAnimationFrame(() => { const b = $("eBar"); if (b) b.style.width = Math.max(0, Math.min(100, E.stocke / E.plein * 100)) + "%"; });
+  }
+  $("jourSec").style.display = J ? "" : "none";
+  if (J) {
+    const k = v => v == null ? "—" : fr(v, 2) + " kWh";
+    $("jourGrp").innerHTML =
+      R("Production solaire", J.pvTotal != null ? k(J.pvTotal) : k(J.pvG), J.apollo != null ? `Gospower ${k(J.pvG)} · Apollo ${k(J.apollo)}` : "Gospower seul · Apollo dès le shunt", "ac") +
+      R("Chargé dans la batterie", k(J.chargeTot), J.shunt ? `dont Gospower ${k(J.chargeG)} · Apollo ${k(J.apollo)}` : "côté Gospower (Apollo non vus)", "ok") +
+      R("Déchargé de la batterie", k(J.dechargeTot), "", "ac") +
+      R("Consommation maison", k(J.maison), "sortie de l’onduleur", "bl");
+  }
+}
 // ===== rendu =====
 function render() {
   const d = D;
@@ -262,7 +359,8 @@ function renderBat() {
   v.setAttribute("stroke", low ? css("--crit") : css("--acc")); v.setAttribute("stroke-dasharray", `${arc} ${C}`); v.setAttribute("stroke-dashoffset", arc);
   requestAnimationFrame(() => requestAnimationFrame(() => v.setAttribute("stroke-dashoffset", arc * (1 - d.soc / 100))));
   const a = .75 * Math.PI; m.setAttribute("cx", 100 + 88 * Math.cos(a)); m.setAttribute("cy", 100 + 88 * Math.sin(a)); m.setAttribute("fill", css("--fg"));
-  $("soc").textContent = fr(d.soc);
+  anim($("soc"), d.soc, v => fr(v));
+  renderFlow(); renderCards();
   const st = d.i > .5 ? ["En charge", "ok"] : d.i < -.5 ? ["En décharge", "ac"] : ["Au repos", "mu"];
   $("state").innerHTML = `<span class="${st[1]}">${st[0]}</span>`;
   $("line").innerHTML = `<span>${fr(d.v, 2)} V</span><span class="mu">·</span><span class="${d.i < 0 ? "ac" : "ok"}">${sg(d.i, 1)} A</span>`;
@@ -353,7 +451,7 @@ function renderSettings() {
 const SER = { soc: ["SOC", "%", 0, s => s.soc], v: ["Tension", "V", 2, s => s.v], i: ["Courant", "A", 1, s => s.i], p: ["Puissance", "W", 0, s => s.v * s.i], ah: ["Ah", "Ah", 0, s => (s.soc - 100) / 100 * CAP] };
 let pick = ["soc", "i"], span = "d2", geo = null;
 function sliceDay(S, h) { if (h === "48") return S; const m = new Date(S[S.length - 1].t); m.setHours(0, 0, 0, 0); return h === "d1" ? S.filter(r => r.t < m.getTime()) : S.filter(r => r.t >= m.getTime()); }
-function scale(a, b) { const s = b - a || 1, st = [.1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000].find(x => s / x <= 4) || 5000, lo = Math.floor(a / st) * st, hi = Math.ceil(b / st) * st, t = []; for (let v = lo; v <= hi + 1e-9; v += st) t.push(+v.toFixed(2)); return { lo, hi, t }; }
+function scale(a, b) { const s = b - a || 1, st = [.1, .2, .5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000].find(x => s / x <= 4) || 5000, lo = Math.floor(a / st) * st, hi = Math.max(Math.ceil(b / st) * st, Math.floor(a / st) * st + st), t = []; for (let v = lo; v <= hi + 1e-9; v += st) t.push(+v.toFixed(2)); return { lo, hi, t }; }
 function chart() {
   if (!D || !D.serie || D.serie.length < 2) { $("chart").innerHTML = ""; return; }
   $("picks").innerHTML = Object.entries(SER).map(([k, s]) => `<button class="chip ${pick[0] === k ? "c1" : pick[1] === k ? "c2" : ""}" data-k="${k}">${s[0]}</button>`).join("");
