@@ -393,7 +393,7 @@ function renderFlow() {
   $("fs-pvG").textContent = L.pv1 != null && L.pvG >= 20 ? fr(L.pv1 / 1000, 1) + " · " + fr(L.pv2 / 1000, 1) : "";
   const fa = $("fv-pvA");
   if (L.apollo == null) { fa.textContent = "dès le shunt"; fa.classList.add("dim"); TW.delete(fa); } else { fa.classList.remove("dim"); anim(fa, L.apollo, kw); }
-  $("fv-ond").textContent = L.etape ? String(L.etape).replace(/ charge$/i, "") : "—";
+  $("fv-ond").textContent = L.etape ? (/^no\b/i.test(String(L.etape)) ? "Pas de charge" : String(L.etape).replace(/ charge$/i, "")) : "—";
   $("fs-ond").textContent = "";
   const bw = L.shunt && L.batt != null ? L.batt : L.battG;                          // batterie : shunt si présent, sinon Gospower
   anim($("fv-bat"), bw, w => (w > 0 ? "+" : w < 0 ? "−" : "") + kw(Math.abs(w)));
