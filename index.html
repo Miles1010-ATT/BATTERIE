@@ -15,7 +15,7 @@
 /* Appli plein écran : grand titre, sections groupées sans bordures, barre d'onglets flottante */
 :root{
   --bg:#0a0e0d; --s1:#131918; --s2:#1b2321; --sep:rgba(255,255,255,.07);
-  --fg:#f1f4f3; --mut:#87938f; --acc:#f0955a; --blue:#6cb8d6; --ok:#5bd394; --warn:#f2c14e; --crit:#ff6b5f;
+  --fg:#f1f4f3; --mut:#87938f; --acc:#f0955a; --blue:#6cb8d6; --ok:#5bd394; --warn:#f2c14e; --crit:#ff6b5f; --pv3:#b496f5;
   --glass:rgba(22,28,27,.72);
   --f:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
   --r:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
@@ -23,7 +23,7 @@
 }
 @media (prefers-color-scheme:light){:root{
   --bg:#f3f5f4; --s1:#ffffff; --s2:#eef1f0; --sep:rgba(0,0,0,.07);
-  --fg:#101716; --mut:#6b7774; --acc:#c9672a; --blue:#2c7393; --ok:#22894f; --warn:#a87a0c; --crit:#cf3a2e;
+  --fg:#101716; --mut:#6b7774; --acc:#c9672a; --blue:#2c7393; --ok:#22894f; --warn:#a87a0c; --crit:#cf3a2e; --pv3:#6f4bc4;
   --glass:rgba(255,255,255,.78); color-scheme:light}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:15px/1.35 var(--f);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
@@ -51,7 +51,7 @@ h1{font:700 32px/1.05 var(--f);letter-spacing:-.025em;margin:0}
 .row .k{min-width:0}
 .row .k small{display:block;font-size:12px;color:var(--mut);margin-top:1px}
 .row .v{font:600 16px var(--r);white-space:nowrap;text-align:right}
-.ok{color:var(--ok)} .ac{color:var(--acc)} .bad{color:var(--crit)} .wa{color:var(--warn)} .bl{color:var(--blue)} .mu{color:var(--mut)}
+.ok{color:var(--ok)} .pv{color:var(--pv3)} .ac{color:var(--acc)} .bad{color:var(--crit)} .wa{color:var(--warn)} .bl{color:var(--blue)} .mu{color:var(--mut)}
 /* statut */
 .hero{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px}
 .ring{position:relative;width:min(232px,62vw);aspect-ratio:1}
@@ -358,7 +358,7 @@ const kw = w => Math.abs(w) >= 1000 ? fr(w / 1000, 2) + " kW" : fr(w) + " W";
 
 // ===== schéma des flux =====
 // PV Gospower → Onduleur ↔ Batterie ← PV Apollo ; Onduleur → Maison
-const NODES = { pvG: [20, 8, "PV Gospower"], pvA: [190, 8, "PV Apollo"], ond: [20, 104, "Onduleur"], bat: [190, 104, "Batterie"], mai: [20, 200, "Maison"], sto: [190, 200, "Stockée"] };
+const NODES = { pvG: [20, 8, "PV1 + PV2"], pvA: [190, 8, "PV3 · Apollo"], ond: [20, 104, "Onduleur"], bat: [190, 104, "Batterie"], mai: [20, 200, "Maison"], sto: [190, 200, "Stockée"] };
 const LINKS = { pvG: [85, 58, 85, 104], pvA: [255, 58, 255, 104], ob: [150, 129, 190, 129], om: [85, 154, 85, 200] };
 let flowBuilt = false;
 function buildFlow() {
@@ -385,6 +385,7 @@ function renderFlow() {
   if (!flowBuilt) buildFlow();
   const ok = css("--ok"), ac = css("--acc"), bl = css("--blue");
   anim($("fv-pvG"), L.pvG, kw);
+  $("fs-pvG").textContent = L.pv1 != null && L.pvG >= 20 ? fr(L.pv1 / 1000, 1) + " · " + fr(L.pv2 / 1000, 1) : "";
   const fa = $("fv-pvA");
   if (L.apollo == null) { fa.textContent = "dès le shunt"; fa.classList.add("dim"); TW.delete(fa); } else { fa.classList.remove("dim"); anim(fa, L.apollo, kw); }
   $("fv-ond").textContent = L.etape ? String(L.etape).replace(/ charge$/i, "") : "—";
@@ -394,7 +395,7 @@ function renderFlow() {
   $("fs-bat").textContent = D.soc != null ? fr(D.soc) + " %" : "";
   anim($("fv-mai"), L.maison, kw);
   if (E) { anim($("fv-sto"), E.stocke, v => fr(v, 1) + " kWh"); $("fs-sto").textContent = "/ " + fr(E.plein) + (E.estime ? " · est." : ""); }
-  setLink("pvG", L.pvG, ac); setLink("pvA", L.apollo, ac);
+  setLink("pvG", L.pvG, ac); setLink("pvA", L.apollo, css("--pv3"));
   setLink("ob", L.battG, L.battG >= 0 ? ok : bl, L.battG < 0);                    // charge → vers la batterie ; décharge → vers l'onduleur
   setLink("om", L.maison, bl);
   $("flowCap").textContent = `Gospower à ${hm(L.t)}` + (L.shunt ? ` · shunt à ${hm(D.updatedAt)}` : " · portail Solar of Things, 5 min");
@@ -487,6 +488,11 @@ function donut(parts, c1, c2) {
   return `<div class="donut"><svg class="gx" viewBox="0 0 120 120"><circle cx="60" cy="60" r="${r}" fill="none" stroke-width="15" style="stroke:var(--s2)"/>${s}<text x="60" y="61" text-anchor="middle" class="dv">${c1}</text><text x="60" y="76" text-anchor="middle" class="gl">${c2}</text></svg>
     <div class="leg">${parts.map(p => `<div><i style="background:var(--${p.col})"></i><span>${p.k}</span><b class="n">${p.txt}</b></div>`).join("")}</div></div>`;
 }
+// PV1 / PV2 / PV3 côte à côte (PV3 = Apollo, déduit du shunt)
+function pvPile(a, b, c) {
+  const t = v => v == null ? "—" : fr(v, 1);
+  return pile([{ k: "PV1", v: a || 0, col: "acc", txt: t(a) }, { k: "PV2", v: b || 0, col: "warn", txt: t(b) }, { k: "PV3 · Apollo", v: c || 0, col: "pv3", txt: c == null ? "dès que le shunt couvre la journée" : t(c) }]);
+}
 // Barre empilée + légende
 function pile(parts) {
   const tot = parts.reduce((a, p) => a + Math.max(0, p.v || 0), 0) || 1;
@@ -532,10 +538,11 @@ const moyH = (A, a, b) => { const x = A.slice(a, b).filter(v => v != null); retu
 function jourHTML(J) {
   const k = v => v == null ? "—" : fr(v, 1), pv = J.pvTotal != null ? J.pvTotal : J.pvG;
   let h = tiles([
-    tile("Solaire", k(pv), "kWh", "ac", J.apollo != null ? `Gospower ${k(J.pvG)} · Apollo ${k(J.apollo)}` : "Gospower · Apollo dès le shunt"),
+    tile("Solaire", k(pv), "kWh", "ac", `PV1 ${k(J.pv1)} · PV2 ${k(J.pv2)} · PV3 ${k(J.apollo)}`),
     tile("Maison", k(J.maison), "kWh", "bl", "sortie de l’onduleur"),
     tile("Chargé", k(J.chargeTot), "kWh", "ok", "dans la batterie"),
-    tile("Déchargé", k(J.dechargeTot), "kWh", "ac", "de la batterie")], 2);
+    tile("Déchargé", k(J.dechargeTot), "kWh", "ac", "de la batterie")], 2) +
+    sep(gh("Solaire du jour", "kWh") + pvPile(J.pv1, J.pv2, J.apollo));
   const P = D.profil;
   if (P && P.aujW && P.aujW.some(v => v != null)) {
     const rythme = P.moyAujW != null ? fr(P.moyAujW * 24 / 1000, 1) : "—";
@@ -579,12 +586,14 @@ function renderBilan() {
   if (eqDay(r.ceMatin.date)) h += `<div class="alert info"><span class="ic">i</span><p>Égalisation aujourd’hui<small>CV Gospower à 57,6 V ce matin (vérifier l’eau avant), remettre 56,4 V ce soir</small></p></div>`;
   // flux de la journée
   const versBatt = Math.max(0, e.battCharge), versMaison = Math.max(0, e.pvTotal - versBatt);
-  h += card("Énergie de la journée", tiles([tile("Solaire", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok")]) +
+  h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok")]) +
     sep(gh("Où est allé le solaire") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
     sep(gh("D’où venait la maison") + pile([{ k: "Solaire direct", v: Math.max(0, e.conso - e.battDecharge), col: "acc", txt: fr(Math.max(0, e.conso - e.battDecharge), 1) }, { k: "Batterie", v: e.battDecharge, col: "warn", txt: fr(e.battDecharge, 1) }])));
   // production
-  h += card("Production solaire", pile([{ k: "PV1 · 9 panneaux", v: e.pv1, col: "acc", txt: fr(e.pv1, 1) + " kWh" }, { k: "PV2 · 6 panneaux", v: e.pv2, col: "blue", txt: fr(e.pv2, 1) + " kWh" }]) +
-    sep(tiles([tile("Pic PV", fr(r.pvMax.kW, 2), "kW", "", "à " + r.pvMax.a), tile("Apollo", sh && sh.apollo != null ? fr(sh.apollo, 1) : "—", sh && sh.apollo != null ? "kWh" : "", "", "mesuré par le shunt")], 2)));
+  const p3 = sh && sh.apollo != null ? sh.apollo : null;
+  h += card("Production solaire", tiles([tile("PV1", fr(e.pv1, 1), "kWh", "ac", "9 panneaux · Gospower"), tile("PV2", fr(e.pv2, 1), "kWh", "wa", "6 panneaux · Gospower"), tile("PV3", p3 != null ? fr(p3, 1) : "—", p3 != null ? "kWh" : "", "pv", "Apollo · via le shunt")]) +
+    sep(gh("Total " + fr(e.pvTotal + (p3 || 0), 1) + " kWh", p3 == null ? "PV3 inconnu ce jour-là" : "") + pvPile(e.pv1, e.pv2, p3)) +
+    sep(tiles([tile("Pic PV1 + PV2", fr(r.pvMax.kW, 2), "kW", "", "à " + r.pvMax.a), tile("Part PV3", p3 != null ? fr(p3 / (e.pvTotal + p3) * 100) : "—", p3 != null ? "%" : "", "pv", "du solaire total")], 2)));
   // consommation par tranche
   const P = r.profilConso_kWh, keys = ["02-10h", "10-14h", "14-17h", "17-02h"], dur = { "02-10h": 8, "10-14h": 4, "14-17h": 3, "17-02h": 9 };
   h += card("Consommation par tranche", vbars({ v: keys.map(k => P[k]), lab: keys.map(k => k.replace("-", "–")), top: keys.map(k => fr(P[k], 1) + " kWh"), col: keys.map(k => k === "17-02h" ? "acc" : "blue"), H: 120, bw: 46 }) +
@@ -595,7 +604,7 @@ function renderBilan() {
     gcap(`Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min, fin de charge ${b.finCharge}.`) +
     sep(tiles([tile("Avant lever, veille", "≈ " + fr(sPrev), "%", "", `${fr(b.avantLever.V, 2)} V à ${fr(b.avantLever.conso_kW, 2)} kW`), tile("Ce matin", "≈ " + fr(sNow), "%", "ok", `${fr(r.ceMatin.avantLever.V, 2)} V · ${r.ceMatin.date}`)], 2)));
   if (sh) h += card("SmartShunt", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok", "toutes sources"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac")], 2) +
-    sep(gh("Qui a chargé la batterie") + pile([{ k: "Gospower", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "Apollo", v: sh.apollo || 0, col: "blue", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
+    sep(gh("Qui a chargé la batterie") + pile([{ k: "PV1 + PV2 (Gospower)", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "PV3 (Apollo)", v: sh.apollo || 0, col: "pv3", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
   const cm = r.chargeMatin, absAvant = b.absorptionDebut && b.absorptionDebut < "10:30";
   h += G("Charge du matin · 07:00–10:30", R("Courant moyen", fr(cm.courantMoyen_A) + " A", `max ${fr(cm.max_A, 1)} A · ${cm.releves_sup50A} relevés > 50 A`) +
     R("Tension PV1 moyenne", fr(cm.pv1Moyen_V) + " V") +
@@ -650,7 +659,8 @@ function compteurHTML() {
   h += card("Si la maison était au réseau Jirama", donut(parts.map(p => ({ ...p, txt: ar(p.v) })), fr(Math.round(tot / 1000)) + " k Ar", "ce mois (proj.)") +
     sep(tiles([tile("Mois préc.", c.moisPrec == null ? "—" : fr(Math.round(factureJirama(c.moisPrec) / 1000)), c.moisPrec == null ? "" : "k Ar", "", c.moisPrec == null ? "pas encore de données" : fr(c.moisPrec) + " kWh"),
       tile("Année", fr(Math.round(annAr / 1000)), "k Ar", "ok", c.anneeNom + " · mois en cours projeté"), tile("Prix moyen", fr(Math.round(tot / Math.max(1, proj))), "Ar/kWh", "", "tout compris HT")])) +
-    sep(tiles([tile("Solaire ce mois", fr(c.pvMois, 1), "kWh", "ac", "Gospower + Apollo"), tile("Valeur du solaire", fr(Math.round(c.pvMois * tot / Math.max(1, proj) / 1000)), "k Ar", "ok", "au prix moyen ci-dessus")], 2)),
+    sep(gh("Solaire ce mois · " + fr(c.pvMois, 1) + " kWh", c.pv3Jours != null && c.pv3Jours < c.joursMois ? `PV3 compté sur ${c.pv3Jours} j / ${c.joursMois}` : "") + pvPile(c.pv1Mois, c.pv2Mois, c.pv3Jours ? c.pv3Mois : null)) +
+    sep(tiles([tile("Solaire ce mois", fr(c.pvMois, 1), "kWh", "ac", "PV1 + PV2 + PV3"), tile("Valeur du solaire", fr(Math.round(c.pvMois * tot / Math.max(1, proj) / 1000)), "k Ar", "ok", "au prix moyen ci-dessus")], 2)),
     `Tarif résidentiel « ${JIRAMA.nom} », grille ORE/Jirama 06/2021, hors taxes : tranches 370 · 600 · 909 Ar, prime fixe ${fr(JIRAMA.primeFixe)} Ar/kW, redevance ${fr(JIRAMA.redevance)} Ar.`);
   return h;
 }
