@@ -438,7 +438,7 @@ function renderBat() {
   $("kP").innerHTML = `<span class="${p < 0 ? "ac" : "ok"}">${sg(p)}</span><small> W</small>`;
   $("kAh").innerHTML = `${sg(ah)}`;
   const ttg = d.shunt && d.shunt.ttg != null ? d.shunt.ttg : null;               // temps restant calculé par le SmartShunt (minutes)
-  $("kT").innerHTML = ttg != null ? (ttg >= 6000 ? "∞" : `${fr(Math.floor(ttg / 60))}<small> h</small>${ttg < 600 ? ` ${String(ttg % 60).padStart(2, "0")}` : ""}`) : d.source !== "esp32" && d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
+  $("kT").innerHTML = ttg != null ? (ttg >= 65535 ? "∞" : `${fr(Math.floor(ttg / 60))}<small> h</small>${ttg < 600 ? ` ${String(ttg % 60).padStart(2, "0")}` : ""}`) : d.source !== "esp32" && d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
   $("kT").nextElementSibling.textContent = ttg != null ? "Avant 50 % · shunt" : "Avant 50 %";
   const al = d.alarmes || [];
   $("batAlert").innerHTML = surplusHTML() + (al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : ""));
