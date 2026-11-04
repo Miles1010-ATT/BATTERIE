@@ -438,7 +438,7 @@ function renderBat() {
   $("kP").innerHTML = `<span class="${p < 0 ? "ac" : "ok"}">${sg(p)}</span><small> W</small>`;
   $("kAh").innerHTML = `${sg(ah)}`;
   const ttg = d.shunt && d.shunt.ttg != null ? d.shunt.ttg : null;               // temps restant calculé par le SmartShunt (minutes)
-  $("kT").innerHTML = ttg != null ? (ttg >= 6000 ? "∞" : `${fr(Math.floor(ttg / 60))}<small> h</small>${ttg < 600 ? ` ${String(ttg % 60).padStart(2, "0")}` : ""}`) : d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
+  $("kT").innerHTML = ttg != null ? (ttg >= 6000 ? "∞" : `${fr(Math.floor(ttg / 60))}<small> h</small>${ttg < 600 ? ` ${String(ttg % 60).padStart(2, "0")}` : ""}`) : d.source !== "esp32" && d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
   $("kT").nextElementSibling.textContent = ttg != null ? "Avant 50 % · shunt" : "Avant 50 %";
   const al = d.alarmes || [];
   $("batAlert").innerHTML = surplusHTML() + (al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : ""));
@@ -572,6 +572,15 @@ function rendementHTML() {
       tile("Jours comparés", R.length, "", "", "moyenne kWh par kWc installé")], 2)),
     "kWh produits par kWc de panneaux, jour par jour. Une chaîne qui produit nettement moins que l’autre par kWc a un problème. Quand la batterie est pleine, le Gospower bride PV1 et PV2 ensemble : compare-les entre eux plutôt qu’au soleil reçu.");
 }
+function pv2HTML() {
+  const T = D.shunt && D.shunt.pv2; if (!T || !T.length) return "";
+  const l = T[T.length - 1], n = T.filter(x => x.chute <= -5 && x.platMin >= 30).length;
+  const verdict = n >= 3 ? ["Probable", "wa", "plafond de PV2"] : n ? ["À confirmer", "", "signe isolé"] : ["Non", "ok", "pas de plafond visible"];
+  return card("PV2 bridé à 13 A ?", vbars({ v: T.map(x => Math.abs(Math.min(0, x.chute))), lab: T.map(x => x.date.slice(0, 2)), top: T.map(x => sg(x.chute, 0) + "%"), col: T.map(x => x.chute <= -5 && x.platMin >= 30 ? "warn" : "ok"), H: 110, bw: 22 }) +
+    tiles([tile("Bridé ?", verdict[0], "", verdict[1], `${verdict[2]} · ${n}/${T.length} j avec chute ≥ 5 % et plateau`),
+           tile("Le " + l.date.slice(0, 5), fr(l.pv2Max), "W", "", `PV2 max · plateau ${fr(l.platMin)} min · PV1 max ${fr(l.pv1Max)} W`)], 2),
+    "La fiche web Gospower indique « 27/13 A » et tes panneaux débitent 13,55 A. On compare PV2 à PV1 par kWc : en plein soleil (PV1 ≥ 90 % de son max) et en soleil moyen (30–60 %). Si PV2 est bridé, son rapport chute en plein soleil et sa courbe reste à plat. Une ombre sur une seule chaîne donne le même signe : le verdict ne compte que s’il se répète plusieurs jours. Seuls les relevés en charge normale comptent : en absorption et en float, le Gospower bride lui-même ses panneaux. Le Gospower ne transmet pas le courant PV, seulement la puissance.");
+}
 const PANNEAUX_UI = { pv1: 9, pv2: 6, pv3: 6 };
 
 // --- export Excel (.xlsx écrit directement, sans bibliothèque) ---
@@ -638,7 +647,12 @@ function shuntHTML() {
               tile("Synchros", L.length, "", "", "sur les 30 derniers jours")]);
   const rd = S.rendement, cy = rd && rd.cycles ? rd.cycles : [], cl = cy[cy.length - 1];
   h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à 95 %` : "après 2 synchros complètes"),
-                  tile("Dernier cycle", cl ? fr(cl.ahOut, 0) + " / " + fr(cl.ahIn, 0) : "—", cl ? "Ah" : "", "", "rendus / reçus")], 2));
+                  tile("Facteur de charge", cl && cl.facteur != null ? fr(cl.facteur, 2) : "—", "", "", cl ? `${fr(cl.ahIn, 0)} Ah reçus / ${fr(cl.ahOut, 0)} rendus` : "même cycle que le rendement")], 2) +
+    gcap("Les deux chiffres décrivent le même cycle, d’une synchro à 100 % à la suivante : facteur de charge = 1 ÷ rendement. Calculés sur le courant brut du shunt, sans les 95 % qu’il applique à son SOC."));
+  const tv = S.tension;
+  if (tv) h += sep(gh("Tension vue par le Gospower", `relevé de ${hm(tv.t)}`) + tiles([tile("Gospower", fr(tv.gospower, 2), "V"), tile("Shunt", fr(tv.shunt, 2), "V"),
+      tile("Écart", sg(tv.ecart, 2), "V", Math.abs(tv.ecart) > 0.5 ? "wa" : "ok", `à ${sg(tv.i, 0)} A`)]) +
+    gcap("Le Gospower mesure à ses bornes : sous forte décharge il voit moins que le shunt (chute dans les câbles). Ses seuils (coupure basse, coupure L2) s’appliquent à sa tension, pas à celle du shunt : garde cet écart en marge."));
   const ax = S.aux;
   if (ax && ax.mode === "milieu") h += sep(gh("Point milieu du parc", "cellules 1–12 / 13–24") + tiles([tile("Moitié basse", fr(ax.bas, 2), "V"), tile("Moitié haute", fr(ax.haut, 2), "V"),
       tile("Écart", fr(ax.ecartV, 2), "V", Math.abs(ax.ecartPct) > 2 ? "bad" : "ok", sg(ax.ecartPct, 1) + " %")]));
@@ -822,6 +836,13 @@ function santeHTML() {
       tiles([tile("Sortie batterie", fr(n.batW), "W", "ac", "shunt"), tile("Maison", fr(n.maisonW), "W", "bl", "Gospower"), tile("Pertes", fr(n.pertesW), "W", n.pertesW > 100 ? "wa" : "ok", `${fr(n.pct, 0)} % · moy. ${fr(moy)} W`)]) +
       gcap("Ce que consomment l’onduleur, l’Apollo en veille et les câbles, sans arriver aux prises. ≈ " + fr(moy * 24 / 1000, 1) + " kWh par jour à ce niveau."));
   }
+  const AB = S.absorption || [], vc = S.vCharge || 56;
+  if (AB.length) {
+    const a = AB[AB.length - 1];
+    h += sep(gh("Temps en absorption", `minutes à ≥ ${fr(vc, 1)} V`) + vbars({ v: AB.map(x => x.min), lab: AB.map(x => x.date.slice(0, 2)), top: AB.map(x => x.min >= 60 ? fr(x.min / 60, 1) + "h" : fr(x.min)), col: AB.map(() => "warn"), H: 110, bw: 22 }) +
+      tiles([tile("Le " + a.date.slice(0, 5), a.min >= 60 ? `${Math.floor(a.min / 60)} h ${String(a.min % 60).padStart(2, "0")}` : fr(a.min), a.min >= 60 ? "" : "min", "", `dès ${a.debut}`), tile("Tension max", fr(a.vMax, 2), "V", "", "mesurée par le shunt")], 2) +
+      gcap(`Seuil = ${fr(vc, 1)} V, la « tension chargée » réglée dans le SmartShunt (même seuil que sa synchronisation). C’est le temps où la batterie est poussée au plus haut, donc celui qui fait buller et consommer l’eau. Jours absents = seuil jamais atteint.`));
+  }
   const P = S.pointes || [];
   if (P.length) {
     const p = P[P.length - 1];
@@ -830,17 +851,23 @@ function santeHTML() {
   }
   return h ? card("Santé de la batterie", h) : "";
 }
+function pleineTile(h) {
+  if (!h.pleineT) return tile("Dernière pleine charge", "—", "", "wa", "pas encore vue par le shunt");
+  const j = (Date.now() - h.pleineT) / 864e5;
+  return tile("Dernière pleine charge", j < 1 ? h.depuisPleine : fr(Math.floor(j)), j < 1 ? "" : (Math.floor(j) > 1 ? "jours" : "jour"), j >= 7 ? "bad" : j >= 3 ? "wa" : "ok", `le ${dmy(h.pleineT).slice(0, 5)} · SOC 100 % au shunt`);
+}
 function renderHisto() {
   const h = D.histo; if (!h) return;
   const resAh = CAP * (100 - FLOOR) / 100, d = v => ({ v, txt: fr(Math.abs(v)) + " Ah", s: fr(Math.abs(v) / CAP * 100) + " % de la capacité" });
-  $("hisBody").innerHTML = `<button class="exp" onclick="exporterExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exporter en Excel</button>` + compteurHTML() + profilCarte() + soireesHTML() + santeHTML() + rendementHTML() +
-    card("Décharges", hbars([{ k: "La plus profonde", c: "acc", ...d(h.plusProfonde) }, { k: "Dernière", c: "blue", ...d(h.derniere) }, { k: "Moyenne", c: "mut", ...d(h.moyenne) }], resAh) +
-      gcap(`Barre pleine = ${fr(resAh)} Ah, la limite de décharge à ${FLOOR} %.`)) +
+  $("hisBody").innerHTML = `<button class="exp" onclick="exporterExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Exporter en Excel</button>` + compteurHTML() + profilCarte() + soireesHTML() + santeHTML() + rendementHTML() + pv2HTML() +
+    card("Décharges", hbars([{ k: "Plus profonde (relevés appli)", c: "acc", ...d(h.plusProfonde) }, { k: "Dernière", c: "blue", ...d(h.derniere) }, { k: "Moyenne", c: "mut", ...d(h.moyenne) }], resAh) +
+      gcap(`Barre pleine = ${fr(resAh)} Ah, la limite de décharge à ${FLOOR} %. Calculé sur les relevés du shunt reçus par l’appli (30 jours). Le record « décharge la plus profonde » de VictronConnect couvre toute la vie du shunt : il peut être plus grand.`)) +
     card("Tension", jauge({ id: "jv", min: 46, max: 60, zones: [[46, 48, "crit"], [48, 57, "ok"], [57, 57.8, "warn"], [57.8, 60, "crit"]],
         ticks: [46, 48, 50, 52, 54, 56, 58, 60].map(v => ({ v, t: v })), marks: [{ v: h.vMin, t: "min " + fr(h.vMin, 2), col: "blue" }, { v: h.vMax, t: "max " + fr(h.vMax, 2), col: h.vMax > 57.8 ? "crit" : "acc" }] }) +
       sep(tiles([tile("Alarmes basse", h.alBasse, "", h.alBasse ? "bad" : "ok", "< 48,0 V"), tile("Alarmes haute", h.alHaute, "", h.alHaute ? "bad" : "ok", "> 57,8 V")], 2))) +
     card("Énergie et cycles", hbars([{ k: "Chargée", v: h.kWhCharge, txt: fr(h.kWhCharge, 1) + " kWh", c: "ok" }, { k: "Déchargée", v: h.kWhDech, txt: fr(h.kWhDech, 1) + " kWh", c: "acc" }]) +
-      sep(tiles([tile("Cycles", h.cycles, "", "", "retours à 100 %"), tile("Dernière pleine", h.depuisPleine || "—", "", "", "il y a")], 2)));
+      sep(tiles([tile("Retours à 100 %", h.cycles, "", "", "jours avec synchro"), pleineTile(h)], 2)) +
+      gcap("« Retours à 100 % » compte les jours où le shunt s’est recalé. Ce n’est pas le « nombre de cycles » de VictronConnect, qui compte chaque passage sous 65 % puis au-dessus de 90 %."));
   roulerCompteur();
 }
 // ----- Courbes : mini, moyenne, maxi de la série choisie -----
