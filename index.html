@@ -240,12 +240,7 @@ button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
     <div class="sec" id="enSec"><div class="h">Énergie dans la batterie</div><div class="grp" id="enGrp"></div></div>
     <div class="sec" id="jourSec"><div class="h">Aujourd’hui depuis 00:00</div><div class="grp" id="jourGrp"></div></div>
     <div id="soirSec"></div>
-    <div class="sec"><div class="h">Ce matin au repos</div>
-      <div class="grp">
-        <div class="row"><span class="k">Table Exide<small id="restSub">—</small></span><span class="v n" id="restSoc">—</span></div>
-        <div class="row"><span class="k">Écart avec le shunt</span><span class="v n" id="restGap">—</span></div>
-      </div>
-    </div>
+    <div id="shuntSec"></div>
   </section>
 
   <!-- BILAN -->
@@ -445,14 +440,7 @@ function renderBat() {
   $("kT").innerHTML = d.i < -.5 ? `${fr(marge / -d.i)}<small> h</small>` : "—";
   const al = d.alarmes || [];
   $("batAlert").innerHTML = surplusHTML() + (al.length ? al.map(x => `<div class="alert"><span class="ic">!</span><p>${x}</p></div>`).join("") : (low ? `<div class="alert"><span class="ic">!</span><p>Sous le seuil de 50 %<small>Réduire la consommation</small></p></div>` : ""));
-  const r = d.jours && d.jours[0] && d.jours[0].resume && d.jours[0].resume.batterie ? d.jours[0].resume : null;
-  if (r && r.ceMatin && r.ceMatin.avantLever) {
-    const al2 = r.ceMatin.avantLever, s = socTable(al2.V, al2.conso_kW);
-    $("restSub").textContent = `${fr(al2.V, 2)} V à ${fr(al2.conso_kW, 2)} kW · ${r.ceMatin.date}`;
-    $("restSoc").textContent = "≈ " + fr(s) + " %";
-    const L = d.serie.find(x => hm(x.t) === "05:45" && dmy(x.t) === r.ceMatin.date);
-    if (L) { const g = L.soc - s; $("restGap").innerHTML = `<span class="${Math.abs(g) > 5 ? "wa" : "ok"}">${sg(g)} pt</span>`; }
-  }
+  $("shuntSec").innerHTML = shuntHTML();
 }
 let bDay = 0;
 // ===== composants graphiques (tuiles, barres, anneau, jauges) =====
@@ -636,6 +624,20 @@ function exporterExcel() {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
 }
 
+
+// ----- santé du SmartShunt -----
+function shuntHTML() {
+  const S = D.shunt; if (!S) return "";
+  const c = S.conseil, L = (S.syncs || []), last = L[L.length - 1];
+  const hmd = t => dmy(t).slice(0, 5) + " " + hm(t);
+  let h = c ? `<div class="alert ${c.niveau === "ok" ? "okb" : ""}"><span class="ic">${c.niveau === "ok" ? "✓" : "!"}</span><p>${c.titre}<small>${c.texte}</small></p></div>` : "";
+  h += tiles([tile("Dernière synchro", last ? dmy(last.t).slice(0, 5) : "—", "", "", last ? `à ${hm(last.t)} · retour à 100 %` : "retour à 100 %"),
+              tile("Correction", last ? fr(last.saut, 1) : "—", last ? "pt" : "", last && last.saut >= 3 ? "wa" : "ok", last ? `SOC ${fr(last.avant, 1)} % avant` : ""),
+              tile("Synchros", L.length, "", "", "sur les 30 derniers jours")]);
+  if (L.length > 1) h += sep(gh("Correction à chaque synchro", "points") + vbars({ v: L.map(x => x.saut), lab: L.map(x => dmy(x.t).slice(0, 5)), top: L.map(x => fr(x.saut, 1)), col: L.map(x => x.saut >= 3 ? "warn" : "ok"), H: 110, bw: 22 }) +
+    gcap("Petite correction (< 3 pts) = shunt bien réglé. Corrections toujours grandes = rendement de charge à ajuster."));
+  return card("SmartShunt", h);
+}
 // ----- Batterie : journée en cours -----
 function jourHTML(J) {
   const k = v => v == null ? "—" : fr(v, 1), pv = J.pvTotal != null ? J.pvTotal : J.pvG;
