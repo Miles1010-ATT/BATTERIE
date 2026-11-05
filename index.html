@@ -709,14 +709,19 @@ function renderBilan() {
   const e = r.energie_kWh, b = r.batterie, A = alertes(r);
   const alM = r.ceMatin?.avantLever || b.avantLever || { V: 0, conso_kW: 0 }, alV = b.avantLever || alM;
   if (!r.ceMatin) r.ceMatin = { date: dmy(D.updatedAt), avantLever: alM };
-  const sNow = socTable(alM.V, alM.conso_kW), sPrev = socTable(alV.V, alV.conso_kW), net = e.battNet;
-  h += `<p class="verdict">${Math.abs(net) < 1 ? "Bilan quasi équilibré" : net > 0 ? "Batterie rechargée" : "Batterie en déficit"} <span class="${net < 0 ? "ac" : "ok"} n">${sg(net, 1)} kWh</span><small>${fr(sNow)} % ce matin au repos</small></p>`;
+  // Journée couverte par le shunt : bilan batterie et SOC du shunt (le Gospower ne voit pas la charge de l'Apollo, la table de tension est approximative)
+  const avecShunt = sh && sh.apollo != null, [jj, mm, aa] = j.date.split("/").map(Number);
+  const socA = t => { const S = (D.serie || []).filter(p => p.soc != null && Math.abs(p.t - t) <= 15 * 6e4).sort((x, y) => Math.abs(x.t - t) - Math.abs(y.t - t)); return S.length ? S[0].soc : null; };
+  const sS = avecShunt ? socA(new Date(aa, mm - 1, jj + 1, 6).getTime()) : null, sSp = avecShunt ? socA(new Date(aa, mm - 1, jj, 6).getTime()) : null;
+  const sNow = sS != null ? sS : socTable(alM.V, alM.conso_kW), sPrev = sSp != null ? sSp : socTable(alV.V, alV.conso_kW);
+  const net = avecShunt ? +(sh.charge - sh.decharge).toFixed(2) : e.battNet;
+  h += `<p class="verdict">${Math.abs(net) < 1 ? "Bilan quasi équilibré" : net > 0 ? "Batterie rechargée" : "Batterie en déficit"} <span class="${net < 0 ? "ac" : "ok"} n">${sg(net, 1)} kWh</span><small>${sS != null ? `SOC ${fr(sNow)} % à 06:00 le lendemain · shunt` : `${fr(sNow)} % ce matin au repos`}</small></p>`;
   h += A.length ? A.map(([t, s]) => `<div class="alert"><span class="ic">!</span><p>${t}<small>${s}</small></p></div>`).join("")
                : `<div class="alert okb"><span class="ic">✓</span><p>Aucune alerte</p></div>`;
   if (eqDay(r.ceMatin.date)) h += `<div class="alert info"><span class="ic">i</span><p>Égalisation aujourd’hui<small>CV Gospower à 57,6 V ce matin (vérifier l’eau avant), remettre 56,4 V ce soir</small></p></div>`;
   // flux de la journée
   const versBatt = Math.max(0, e.battCharge), versMaison = Math.max(0, e.pvTotal - versBatt);
-  h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok")]) +
+  h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok", avecShunt ? "shunt, PV3 compris" : "vu par le Gospower")]) +
     sep(gh("Où est allé le solaire") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
     sep(gh("D’où venait la maison") + pile([{ k: "Solaire direct", v: Math.max(0, e.conso - e.battDecharge), col: "acc", txt: fr(Math.max(0, e.conso - e.battDecharge), 1) }, { k: "Batterie", v: e.battDecharge, col: "warn", txt: fr(e.battDecharge, 1) }])));
   // production
@@ -732,7 +737,7 @@ function renderBilan() {
   // batterie
   h += card("Tension batterie", gh("Au fil de la journée", "V") + tensionJour(b) +
     gcap(`Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. ${/^\d/.test(b.absorptionDebut || "") ? `Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min` : "Absorption non atteinte"}${b.finCharge ? `, fin de charge ${b.finCharge}` : ""}.`) +
-    sep(tiles([tile("Avant lever, veille", "≈ " + fr(sPrev), "%", "", `${fr(alV.V, 2)} V à ${fr(alV.conso_kW, 2)} kW`), tile("Ce matin", "≈ " + fr(sNow), "%", "ok", `${fr(alM.V, 2)} V · ${r.ceMatin.date}`)], 2)));
+    sep(tiles([tile("Avant lever, veille", (sSp != null ? "" : "≈ ") + fr(sPrev), "%", "", sSp != null ? "SOC shunt à 06:00" : `${fr(alV.V, 2)} V à ${fr(alV.conso_kW, 2)} kW`), tile("Ce matin", (sS != null ? "" : "≈ ") + fr(sNow), "%", "ok", sS != null ? "SOC shunt à 06:00" : `${fr(alM.V, 2)} V · ${r.ceMatin.date}`)], 2)));
   if (sh) h += card("SmartShunt", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok", "toutes sources"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac")], 2) +
     sep(gh("Qui a chargé la batterie") + pile([{ k: "PV1 + PV2 (Gospower)", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "PV3 (Apollo)", v: sh.apollo || 0, col: "pv3", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
   const cm = r.chargeMatin, absAvant = b.absorptionDebut && b.absorptionDebut < "10:30";
