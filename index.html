@@ -651,8 +651,11 @@ function shuntHTML() {
   h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à 95 %` : "après 2 synchros complètes"),
                   tile("Facteur de charge", cl && cl.facteur != null ? fr(cl.facteur, 2) : "—", "", "", cl ? `${fr(cl.ahIn, 0)} Ah reçus / ${fr(cl.ahOut, 0)} rendus` : "même cycle que le rendement")], 2) +
     gcap("Les deux chiffres décrivent le même cycle, d’une synchro à 100 % à la suivante : facteur de charge = 1 ÷ rendement. Calculés sur le courant brut du shunt, sans les 95 % qu’il applique à son SOC."));
-  const tv = S.tension;
-  if (tv) h += sep(gh("Tension vue par le Gospower", `relevé de ${hm(tv.t)}`) + tiles([tile("Gospower", fr(tv.gospower, 2), "V"), tile("Shunt", fr(tv.shunt, 2), "V"),
+  // pas de relevé shunt à la même minute que le Gospower : on compare les deux derniers relevés, heures affichées
+  let tv = S.tension;
+  if (!tv && D.source === "esp32" && D.gospower && D.gospower.v != null && D.v != null)
+    tv = { t: D.gospower.t, ts: D.updatedAt, gospower: D.gospower.v, shunt: D.v, ecart: +(D.gospower.v - D.v).toFixed(2), i: D.i };
+  if (tv) h += sep(gh("Tension vue par le Gospower", tv.ts ? `Gospower ${hm(tv.t)} · shunt ${hm(tv.ts)}` : `relevé de ${hm(tv.t)}`) + tiles([tile("Gospower", fr(tv.gospower, 2), "V"), tile("Shunt", fr(tv.shunt, 2), "V"),
       tile("Écart", sg(tv.ecart, 2), "V", Math.abs(tv.ecart) > 0.5 ? "wa" : "ok", `à ${sg(tv.i, 0)} A`)]) +
     gcap("Le Gospower mesure à ses bornes : sous forte décharge il voit moins que le shunt (chute dans les câbles). Ses seuils (coupure basse, coupure L2) s’appliquent à sa tension, pas à celle du shunt : garde cet écart en marge."));
   const ax = S.aux;
