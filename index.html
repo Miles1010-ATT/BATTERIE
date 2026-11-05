@@ -387,7 +387,9 @@ function renderFlow() {
   anim($("fv-pvG"), L.pvG, kw);
   $("fs-pvG").textContent = L.pv1 != null && L.pvG >= 20 ? fr(L.pv1 / 1000, 1) + " · " + fr(L.pv2 / 1000, 1) : "";
   const fa = $("fv-pvA");
-  if (L.apollo == null) { fa.textContent = "dès le shunt"; fa.classList.add("dim"); TW.delete(fa); } else { fa.classList.remove("dim"); anim(fa, L.apollo, kw); }
+  // relevé shunt et Gospower pas à la même minute : on prend le dernier de chaque (shunt − charge Gospower)
+  const ap = L.apollo != null ? L.apollo : (L.shunt && L.batt != null && L.battG != null ? Math.max(0, L.batt - L.battG) : null);
+  if (ap == null) { fa.textContent = L.shunt ? "—" : "dès le shunt"; fa.classList.add("dim"); TW.delete(fa); } else { fa.classList.remove("dim"); anim(fa, ap, kw); }
   $("fv-ond").textContent = L.etape ? (/^no\b/i.test(String(L.etape)) ? "Pas de charge" : String(L.etape).replace(/ charge$/i, "")) : "—";
   $("fs-ond").textContent = "";
   const bw = L.shunt && L.batt != null ? L.batt : L.battG;                          // batterie : shunt si présent, sinon Gospower
@@ -395,7 +397,7 @@ function renderFlow() {
   $("fs-bat").textContent = D.soc != null ? fr(D.soc) + " %" : "";
   anim($("fv-mai"), L.maison, kw);
   if (E) { anim($("fv-sto"), E.stocke, v => fr(v, 1) + " kWh"); $("fs-sto").textContent = "/ " + fr(E.plein) + (E.estime ? " · est." : ""); }
-  setLink("pvG", L.pvG, ac); setLink("pvA", L.apollo, css("--pv3"));
+  setLink("pvG", L.pvG, ac); setLink("pvA", ap, css("--pv3"));
   setLink("ob", L.battG, L.battG >= 0 ? ok : bl, L.battG < 0);                    // charge → vers la batterie ; décharge → vers l'onduleur
   setLink("om", L.maison, bl);
   $("flowCap").textContent = `Gospower à ${hm(L.t)}` + (L.shunt ? ` · shunt à ${hm(D.updatedAt)}` : " · portail Solar of Things, 5 min");
