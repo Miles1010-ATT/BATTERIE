@@ -646,7 +646,7 @@ function shuntHTML() {
   let h = c ? `<div class="alert ${c.niveau === "ok" ? "okb" : ""}"><span class="ic">${c.niveau === "ok" ? "✓" : "!"}</span><p>${c.titre}<small>${c.texte}</small></p></div>` : "";
   h += tiles([tile("Synchro", last ? dmy(last.t).slice(0, 5) : "—", "", "", last ? `à ${hm(last.t)} · retour à 100 %` : "retour à 100 %"),
               tile("Correction", last ? fr(last.saut, 1) : "—", last ? "pt" : "", last && last.saut >= 3 ? "wa" : "ok", last ? `SOC ${fr(last.avant, 1)} % avant` : ""),
-              tile("Synchros", L.length, "", "", "sur les 30 derniers jours")]);
+              tile("Synchros", L.length, "", "", "retours à 100 % relevés (1 par recharge complète)")]);
   const rd = S.rendement, cy = rd && rd.cycles ? rd.cycles : [], cl = cy[cy.length - 1];
   h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à 95 %` : "après 2 synchros complètes"),
                   tile("Facteur de charge", cl && cl.facteur != null ? fr(cl.facteur, 2) : "—", "", "", cl ? `${fr(cl.ahIn, 0)} Ah reçus / ${fr(cl.ahOut, 0)} rendus` : "même cycle que le rendement")], 2) +
