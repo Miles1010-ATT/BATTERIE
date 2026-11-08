@@ -665,6 +665,22 @@ function shuntHTML() {
   else h += sep(gcap("Entrée auxiliaire libre : une fois le fil branché au milieu du parc (entre les cellules 12 et 13) et réglé sur « point milieu », l’écart entre les deux moitiés s’affichera ici."));
   if (L.length > 1) h += sep(gh("Correction à chaque synchro", "points") + vbars({ v: L.map(x => x.saut), lab: L.map(x => dmy(x.t).slice(0, 5)), top: L.map(x => fr(x.saut, 1)), col: L.map(x => x.saut >= 3 ? "warn" : "ok"), H: 110, bw: 22 }) +
     gcap("Petite correction (< 3 pts) = shunt bien réglé. Corrections toujours grandes = rendement de charge à ajuster."));
+  const Lw = S.liaison;
+  if (Lw) {
+    const q = r => r == null ? ["—", ""] : r >= -67 ? ["bon", "ok"] : r >= -75 ? ["correct", ""] : r >= -82 ? ["faible", "wa"] : ["limite", "wa"];
+    const pc = Lw.attendu24 ? Math.round(Lw.recu24 / Lw.attendu24 * 100) : null, [qt, qc] = q(Lw.rssi);
+    const age = Lw.t ? Math.round((Date.now() - Lw.t) / 6e4) : null;
+    h += sep(gh("Liaison ESP32 → serveur", Lw.t ? `dernier envoi ${hm(Lw.t)}` : "firmware v2.1 requis pour le signal") +
+      tiles([tile("Signal Wi-Fi", Lw.rssi != null ? fr(Lw.rssi) : "—", Lw.rssi != null ? "dBm" : "", qc, Lw.rssi != null ? `${qt}${Lw.rssiMoy24 != null ? ` · moy. 24 h ${fr(Lw.rssiMoy24)}` : ""}` : "pas encore reçu"),
+             tile("Borne", Lw.borne || "—", "", "", `${Lw.borne === "Tenda" ? "relais · " : Lw.borne ? "réseau direct · " : ""}${Lw.ch ? "canal " + Lw.ch : ""}`),
+             tile("Minutes reçues", pc != null ? fr(pc) : "—", pc != null ? "%" : "", pc != null && pc < 90 ? "wa" : "ok", `${fr(Lw.recu24)} / ${fr(Lw.attendu24)} sur 24 h`)]) +
+      tiles([tile("En attente", Lw.file != null ? fr(Lw.file) : "—", "", Lw.file > 5 ? "wa" : "", "relevés à renvoyer"),
+             tile("Perdus", Lw.perdus != null ? fr(Lw.perdus) : "—", "", Lw.perdus > 0 ? "wa" : "ok", "file pleine (> 12 h coupé)"),
+             tile("Allumé depuis", Lw.up != null ? (Lw.up >= 120 ? fr(Math.floor(Lw.up / 60)) : fr(Lw.up)) : "—", Lw.up != null ? (Lw.up >= 120 ? "h" : "min") : "", "", "redémarre seul après 60 min sans envoi")]) +
+      (Lw.heures && Lw.heures.length > 1 ? vbars({ v: Lw.heures.map(x => x.n), lab: Lw.heures.map((x, k) => k % 3 ? "" : x.h.slice(6)), top: Lw.heures.map(() => ""), col: Lw.heures.map(x => x.n >= 54 ? "ok" : "warn"), H: 90, bw: 8 }) : "") +
+      gcap("Minutes reçues par heure sur 24 h (60 = complet). Signal : bon ≥ −67 dBm, correct ≥ −75, faible ≥ −82, en dessous = limite. Avec le firmware v2, une minute manquée est gardée en mémoire et renvoyée au retour du Wi-Fi, avec son heure d’origine." +
+        (age != null && age > 10 ? ` Aucun envoi depuis ${fr(age)} min.` : "")));
+  }
   return card("SmartShunt", h);
 }
 // ----- Batterie : journée en cours -----
