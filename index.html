@@ -648,9 +648,9 @@ function shuntHTML() {
               tile("Correction", last ? fr(last.saut, 1) : "—", last ? "pt" : "", last && last.saut >= 3 ? "wa" : "ok", last ? `SOC ${fr(last.avant, 1)} % avant` : ""),
               tile("Synchros", L.length, "", "", "retours à 100 % relevés (1 par recharge complète)")]);
   const rd = S.rendement, cy = rd && rd.cycles ? rd.cycles : [], cl = cy[cy.length - 1];
-  h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à 95 %` : "après 2 synchros complètes"),
+  h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à ${S.effReglee || 94} %` : "après 2 synchros complètes"),
                   tile("Facteur de charge", cl && cl.facteur != null ? fr(cl.facteur, 2) : "—", "", "", cl ? `${fr(cl.ahIn, 0)} Ah reçus / ${fr(cl.ahOut, 0)} rendus` : "même cycle que le rendement")], 2) +
-    gcap("Les deux chiffres décrivent le même cycle, d’une synchro à 100 % à la suivante : facteur de charge = 1 ÷ rendement. Calculés sur le courant brut du shunt, sans les 95 % qu’il applique à son SOC."));
+    gcap(`Les deux chiffres décrivent le même cycle, d’une synchro à 100 % à la suivante : facteur de charge = 1 ÷ rendement. Calculés sur le courant brut du shunt, sans les ${S.effReglee || 94} % qu’il applique à son SOC.`));
   // pas de relevé shunt à la même minute que le Gospower : on compare les deux derniers relevés, heures affichées
   let tv = S.tension;
   if (!tv && D.source === "esp32" && D.gospower && D.gospower.v != null && D.v != null)
@@ -913,7 +913,7 @@ $("bDays").addEventListener("click", e => { const k = e.target.closest("button")
 function renderSettings() {
   const A = [["SOC bas", "50 %, retombe à 55 %"], ["Tension avant lever", "< 48,7 V corrigée"], ["Tension basse", "< 48,0 V"], ["Tension élevée", "> 57,0 V (57,8 V en égalisation)"], ["Absorption non atteinte", "dans la journée"], ["Shunt muet", "> 30 min sans mesure"]];
   $("alList").innerHTML = A.map(([k, s]) => R(k, "Active", s, "ok")).join("");
-  const P = [["Capacité", "1530 Ah"], ["Tension chargée", "56,0 V"], ["Seuil de décharge", "50 %"], ["Courant de queue", "2,0 %"], ["Détection chargée", "3 min"], ["Peukert", "1,13"], ["Rendement de charge", "95 %"], ["Seuil de courant", "0,10 A"]];
+  const P = [["Capacité", "1530 Ah"], ["Tension chargée", "56,0 V"], ["Seuil de décharge", "50 %"], ["Courant de queue", "2,0 %"], ["Détection chargée", "3 min"], ["Peukert", "1,13"], ["Rendement de charge", "94 %"], ["Seuil de courant", "0,10 A"]];
   $("setList").innerHTML = P.map(([k, v]) => R(k, v)).join("");
 }
 
