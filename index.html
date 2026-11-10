@@ -743,10 +743,11 @@ function renderBilan() {
                : `<div class="alert okb"><span class="ic">✓</span><p>Aucune alerte</p></div>`;
   if (eqDay(r.ceMatin.date)) h += `<div class="alert info"><span class="ic">i</span><p>Égalisation aujourd’hui<small>CV Gospower à 57,6 V ce matin (vérifier l’eau avant), remettre 56,4 V ce soir</small></p></div>`;
   // flux de la journée
-  const versBatt = Math.max(0, e.battCharge), versMaison = Math.max(0, e.pvTotal - versBatt);
+  const p3j = sh && sh.apollo != null ? sh.apollo : 0;                 // PV3 (Apollo) charge directement la batterie
+  const versBatt = Math.max(0, e.battCharge) + p3j, versMaison = Math.max(0, e.pvTotal - Math.max(0, e.battCharge));
   h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile(stocke != null ? "Stocké" : "Net batterie", sg(bil, 1), "kWh", bil < 0 ? "ac" : "ok", stocke != null ? `SOC ${fr(s00, 1)} → ${fr(s24, 1)} %` : avecShunt ? "shunt, PV3 compris" : "vu par le Gospower")]) +
     (pertes != null ? gcap(`Entré dans la batterie ${fr(sh.charge, 1)} kWh, sorti ${fr(sh.decharge, 1)} kWh : écart ${sg(net, 1)} kWh, dont ${sg(stocke, 1)} réellement stocké. Les ${fr(Math.max(0, pertes), 1)} kWh restants sont les pertes de charge (rendement ≈ ${(D.shunt && D.shunt.effReglee) || 94} %, tension plus haute en charge qu’en décharge) et le courant d’entretien une fois la batterie pleine.`) : "") +
-    sep(gh("Où est allé le solaire") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
+    sep(gh("Où est allé le solaire", p3j ? "PV1 + PV2 + PV3" : "PV1 + PV2") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
     sep(gh("D’où venait la maison") + pile([{ k: "Solaire direct", v: Math.max(0, e.conso - e.battDecharge), col: "acc", txt: fr(Math.max(0, e.conso - e.battDecharge), 1) }, { k: "Batterie", v: e.battDecharge, col: "warn", txt: fr(e.battDecharge, 1) }])));
   // production
   const p3 = sh && sh.apollo != null ? sh.apollo : null;
