@@ -670,7 +670,7 @@ function shuntHTML() {
     const age = Lw.t ? Math.round((Date.now() - Lw.t) / 6e4) : null;
     h += sep(gh("Liaison ESP32 → serveur", Lw.t ? `dernier envoi ${hm(Lw.t)}` : "firmware v2.1 requis pour le signal") +
       tiles([tile("Signal Wi-Fi", Lw.rssi != null ? fr(Lw.rssi) : "—", Lw.rssi != null ? "dBm" : "", qc, Lw.rssi != null ? `${qt}${Lw.rssiMoy24 != null ? ` · moy. 24 h ${fr(Lw.rssiMoy24)}` : ""}` : "pas encore reçu"),
-             tile("Borne", Lw.borne || "—", "", "", `${Lw.borne === "Tenda" ? "relais · " : Lw.borne ? "réseau direct · " : ""}${Lw.ch ? "canal " + Lw.ch : ""}`),
+             tile("Canal Wi-Fi", Lw.ch != null ? fr(Lw.ch) : "—", "", "", "2,4 GHz"),
              tile("Minutes reçues", pc != null ? fr(pc) : "—", pc != null ? "%" : "", pc != null && pc < 90 ? "wa" : "ok", `${fr(Lw.recu24)} / ${fr(Lw.attendu24)} sur 24 h`)]) +
       tiles([tile("En attente", Lw.file != null ? fr(Lw.file) : "—", "", Lw.file > 5 ? "wa" : "", "relevés à renvoyer"),
              tile("Perdus", Lw.perdus != null ? fr(Lw.perdus) : "—", "", Lw.perdus > 0 ? "wa" : "ok", "file pleine (> 12 h coupé)"),
