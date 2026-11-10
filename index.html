@@ -766,11 +766,14 @@ function renderBilan() {
       : `Tension vue par le Gospower. Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. ${/^\d/.test(b.absorptionDebut || "") ? `Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min` : "Absorption non atteinte"}${b.finCharge ? `, fin de charge ${b.finCharge}` : ""}.`) +
     sep(tiles([tile("Avant lever, veille", (sSp != null ? "" : "≈ ") + fr(sPrev), "%", "", sSp != null ? "SOC shunt à 06:00" : `${fr(alV.V, 2)} V à ${fr(alV.conso_kW, 2)} kW`), tile("Ce matin", (sS != null ? "" : "≈ ") + fr(sNow), "%", "ok", sS != null ? "SOC shunt à 06:00" : `${fr(alM.V, 2)} V · ${r.ceMatin.date}`)], 2)));
   if (sh) h += card("SmartShunt", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok", "toutes sources"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac")], 2) +
-    sep(gh("Qui a chargé la batterie") + pile([{ k: "PV1 + PV2 (Gospower)", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "PV3 (Apollo)", v: sh.apollo || 0, col: "pv3", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
+    sep(gh("Arrivé sur la batterie", "kWh produits") + pile([{ k: "PV1 + PV2 (Gospower)", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "PV3 (Apollo)", v: sh.apollo || 0, col: "pv3", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }]) +
+      (sh.apollo != null && e.battCharge + sh.apollo > sh.charge + 0.2 ? gcap(`Total ${fr(e.battCharge + sh.apollo, 1)} kWh, plus que les ${fr(sh.charge, 1)} kWh « chargés » : quand la maison tire sur la batterie pendant que l’Apollo produit, ses kWh passent directement à la maison sans être comptés comme charge par le shunt.`) : "")));
   const cm = r.chargeMatin, absAvant = b.absorptionDebut && b.absorptionDebut < "10:30";
-  h += G("Charge du matin · 07:00–10:30", R("Courant moyen", fr(cm.courantMoyen_A) + " A", `max ${fr(cm.max_A, 1)} A · ${cm.releves_sup50A} relevés > 50 A`) +
+  h += G("Charge du matin · 07:00–10:30", R("Courant moyen du Gospower", fr(cm.courantMoyen_A) + " A", `max ${fr(cm.max_A, 1)} A · ${cm.releves_sup50A} relevés > 50 A`) +
     (cm.pv1Moyen_V != null ? R("Tension PV1 moyenne", fr(cm.pv1Moyen_V) + " V") : "") +
-    R("Lecture", absAvant ? "Normale" : "À vérifier", absAvant ? `absorption atteinte à ${b.absorptionDebut} : batterie pleine, pas de blocage` : cm.verdict, absAvant ? "ok" : "wa"));
+    R("Lecture", absAvant || cm.verdict === "Charge normale" ? "Normale" : "À vérifier",
+      absAvant ? `${fr(b.seuilAbs || 56, 1)} V atteints à ${b.absorptionDebut} : batterie pleine, pas de blocage` : cm.verdict === "Charge normale" ? "le Gospower est passé en absorption avant 10:30" : cm.verdict,
+      absAvant || cm.verdict === "Charge normale" ? "ok" : "wa"));
   const ch = r.chutesTension || [];
   h += G("Anomalies", (r.dissipateurMax ? R("Dissipateur maxi", fr(r.dissipateurMax.C, 1) + " °C", "à " + r.dissipateurMax.a + " · seuil 65 °C", r.dissipateurMax.C > 65 ? "bad" : "ok") : "") +
     R("Trous de données", r.trous.length ? r.trous.length : "Aucun", r.points + " relevés", r.trous.length ? "bad" : "ok") +
