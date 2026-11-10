@@ -651,13 +651,11 @@ function shuntHTML() {
   h += sep(tiles([tile("Rendement de charge", cl ? fr(cl.pct, 1) : "—", cl ? "%" : "", "", cl ? `mesuré sur ${cy.length} cycle${cy.length > 1 ? "s" : ""} · réglé à ${S.effReglee || 94} %` : "après 2 synchros complètes"),
                   tile("Facteur de charge", cl && cl.facteur != null ? fr(cl.facteur, 2) : "—", "", "", cl ? `${fr(cl.ahIn, 0)} Ah reçus / ${fr(cl.ahOut, 0)} rendus` : "même cycle que le rendement")], 2) +
     gcap(`Les deux chiffres décrivent le même cycle, d’une synchro à 100 % à la suivante : facteur de charge = 1 ÷ rendement. Calculés sur le courant brut du shunt, sans les ${S.effReglee || 94} % qu’il applique à son SOC.`));
-  // pas de relevé shunt à la même minute que le Gospower : on compare les deux derniers relevés, heures affichées
-  let tv = S.tension;
-  if (!tv && D.source === "esp32" && D.gospower && D.gospower.v != null && D.v != null)
-    tv = { t: D.gospower.t, ts: D.updatedAt, gospower: D.gospower.v, shunt: D.v, ecart: +(D.gospower.v - D.v).toFixed(2), i: D.i };
-  if (tv) h += sep(gh("Tension vue par le Gospower", tv.ts ? `Gospower ${hm(tv.t)} · shunt ${hm(tv.ts)}` : `relevé de ${hm(tv.t)}`) + tiles([tile("Gospower", fr(tv.gospower, 2), "V"), tile("Shunt", fr(tv.shunt, 2), "V"),
+  // comparaison à la même minute et à courant stable (sinon : dernière comparaison valable, avec son heure)
+  const tv = S.tension;
+  if (tv) h += sep(gh("Tension vue par le Gospower", `${tv.ancien ? "dernier relevé stable · " : ""}${dmy(tv.t).slice(0, 5)} ${hm(tv.t)}`) + tiles([tile("Gospower", fr(tv.gospower, 2), "V"), tile("Shunt", fr(tv.shunt, 2), "V"),
       tile("Écart", sg(tv.ecart, 2), "V", Math.abs(tv.ecart) > 0.5 ? "wa" : "ok", `à ${sg(tv.i, 0)} A`)]) +
-    gcap("Le Gospower mesure à ses bornes : sous forte décharge il voit moins que le shunt (chute dans les câbles). Ses seuils (coupure basse, coupure L2) s’appliquent à sa tension, pas à celle du shunt : garde cet écart en marge."));
+    gcap("Le Gospower mesure à ses bornes, le shunt aux bornes de la batterie ; l’écart est la chute dans les câbles, fusibles et connexions. En décharge, le Gospower voit moins que la batterie : ses seuils de coupure s’appliquent à sa tension. En charge, il voit plus : il atteint sa consigne d’absorption (56,4 V) alors que la batterie est encore en dessous. Comparé seulement quand le courant est stable."));
   const ax = S.aux;
   if (ax && ax.mode === "milieu") h += sep(gh("Point milieu du parc", "cellules 1–12 / 13–24") + tiles([tile("Moitié basse", fr(ax.bas, 2), "V"), tile("Moitié haute", fr(ax.haut, 2), "V"),
       tile("Écart", fr(ax.ecartV, 2), "V", Math.abs(ax.ecartPct) > 2 ? "bad" : "ok", sg(ax.ecartPct, 1) + " %")]));
@@ -710,7 +708,7 @@ function tensionJour(b) {
   [48, 50, 52, 54, 56, 58].forEach(v => s += `<line x1="${L}" x2="${Rr}" y1="${Y(v)}" y2="${Y(v)}" class="ggrid"/><text x="${L - 5}" y="${Y(v) + 3}" text-anchor="end" class="gl">${v}</text>`);
   [0, 6, 12, 18, 24].forEach(h => s += `<text x="${X(h)}" y="${H - 4}" text-anchor="middle" class="gl">${h} h</text>`);
   if (/^\d\d:\d\d$/.test(b.absorptionDebut || "")) { const a = +b.absorptionDebut.slice(0, 2) + +b.absorptionDebut.slice(3, 5) / 60, d = (b.absorptionDuree_min || 0) / 60;
-    s += `<rect x="${X(a)}" y="${T}" width="${Math.max(2, X(a + d) - X(a))}" height="${B - T}" class="gband"/><text x="${X(a + d / 2)}" y="${T - 5}" text-anchor="middle" class="gl">absorption</text>`; }
+    s += `<rect x="${X(a)}" y="${T}" width="${Math.max(2, X(a + d) - X(a))}" height="${B - T}" class="gband"/><text x="${X(a + d / 2)}" y="${T - 5}" text-anchor="middle" class="gl">${b.source === "shunt" ? "≥ " + fr(b.seuilAbs, 1) + " V" : "absorption"}</text>`; }
   if (b.consigneCV) s += `<line x1="${L}" x2="${Rr}" y1="${Y(b.consigneCV)}" y2="${Y(b.consigneCV)}" class="gavg"/>`;
   s += `<line x1="${L}" x2="${Rr}" y1="${Y(48)}" y2="${Y(48)}" style="stroke:var(--crit);opacity:.5" stroke-dasharray="2 3"/>`;
   s += `<polyline points="${pts.map(p => X(p.x) + "," + Y(p.V)).join(" ")}" fill="none" style="stroke:var(--acc)" stroke-width="2" stroke-linejoin="round"/>`;
@@ -736,13 +734,18 @@ function renderBilan() {
   const sS = avecShunt ? socA(new Date(aa, mm - 1, jj + 1, 6).getTime()) : null, sSp = avecShunt ? socA(new Date(aa, mm - 1, jj, 6).getTime()) : null;
   const sNow = sS != null ? sS : socTable(alM.V, alM.conso_kW), sPrev = sSp != null ? sSp : socTable(alV.V, alV.conso_kW);
   const net = avecShunt ? +(sh.charge - sh.decharge).toFixed(2) : e.battNet;
-  h += `<p class="verdict">${Math.abs(net) < 1 ? "Bilan quasi équilibré" : net > 0 ? "Batterie rechargée" : "Batterie en déficit"} <span class="${net < 0 ? "ac" : "ok"} n">${sg(net, 1)} kWh</span><small>${sS != null ? `SOC ${fr(sNow)} % à 06:00 le lendemain · shunt` : `${fr(sNow)} % ce matin au repos`}</small></p>`;
+  // énergie réellement stockée = variation du SOC du shunt de 00:00 à 24:00 ; le reste de l'« entré − sorti » part en pertes de charge et en entretien (float)
+  const s00 = avecShunt ? socA(new Date(aa, mm - 1, jj, 0).getTime()) : null, s24 = avecShunt ? socA(new Date(aa, mm - 1, jj + 1, 0).getTime()) : null;
+  const cap = (D.energie && D.energie.plein) || 73.4, stocke = s00 != null && s24 != null ? +((s24 - s00) / 100 * cap).toFixed(1) : null;
+  const bil = stocke != null ? stocke : net, pertes = stocke != null ? +(net - stocke).toFixed(1) : null;
+  h += `<p class="verdict">${Math.abs(bil) < 1 ? "Bilan quasi équilibré" : bil > 0 ? "Batterie rechargée" : "Batterie en déficit"} <span class="${bil < 0 ? "ac" : "ok"} n">${sg(bil, 1)} kWh</span><small>${sS != null ? `SOC ${fr(sNow)} % à 06:00 le lendemain · shunt` : `${fr(sNow)} % ce matin au repos`}</small></p>`;
   h += A.length ? A.map(([t, s]) => `<div class="alert"><span class="ic">!</span><p>${t}<small>${s}</small></p></div>`).join("")
                : `<div class="alert okb"><span class="ic">✓</span><p>Aucune alerte</p></div>`;
   if (eqDay(r.ceMatin.date)) h += `<div class="alert info"><span class="ic">i</span><p>Égalisation aujourd’hui<small>CV Gospower à 57,6 V ce matin (vérifier l’eau avant), remettre 56,4 V ce soir</small></p></div>`;
   // flux de la journée
   const versBatt = Math.max(0, e.battCharge), versMaison = Math.max(0, e.pvTotal - versBatt);
-  h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile("Net batterie", sg(net, 1), "kWh", net < 0 ? "ac" : "ok", avecShunt ? "shunt, PV3 compris" : "vu par le Gospower")]) +
+  h += card("Énergie de la journée", tiles([tile("Solaire PV1 + PV2", fr(e.pvTotal, 1), "kWh", "ac"), tile("Maison", fr(e.conso, 1), "kWh", "bl"), tile(stocke != null ? "Stocké" : "Net batterie", sg(bil, 1), "kWh", bil < 0 ? "ac" : "ok", stocke != null ? `SOC ${fr(s00, 1)} → ${fr(s24, 1)} %` : avecShunt ? "shunt, PV3 compris" : "vu par le Gospower")]) +
+    (pertes != null ? gcap(`Entré dans la batterie ${fr(sh.charge, 1)} kWh, sorti ${fr(sh.decharge, 1)} kWh : écart ${sg(net, 1)} kWh, dont ${sg(stocke, 1)} réellement stocké. Les ${fr(Math.max(0, pertes), 1)} kWh restants sont les pertes de charge (rendement ≈ ${(D.shunt && D.shunt.effReglee) || 94} %, tension plus haute en charge qu’en décharge) et le courant d’entretien une fois la batterie pleine.`) : "") +
     sep(gh("Où est allé le solaire") + pile([{ k: "Maison (direct)", v: versMaison, col: "blue", txt: fr(versMaison, 1) }, { k: "Batterie", v: versBatt, col: "ok", txt: fr(versBatt, 1) }])) +
     sep(gh("D’où venait la maison") + pile([{ k: "Solaire direct", v: Math.max(0, e.conso - e.battDecharge), col: "acc", txt: fr(Math.max(0, e.conso - e.battDecharge), 1) }, { k: "Batterie", v: e.battDecharge, col: "warn", txt: fr(e.battDecharge, 1) }])));
   // production
@@ -757,7 +760,9 @@ function renderBilan() {
     sep(tiles([tile("Pic", r.consoMax ? fr(r.consoMax.kW, 2) : "—", r.consoMax ? "kW" : "", "", r.consoMax ? "à " + r.consoMax.a : ""), tile("Nuit > 0,6 kW", r.consoNocturneSup06_min, "min", r.consoNocturneSup06_min > 60 ? "bad" : "", "seuil 60 min")], 2)));
   // batterie
   h += card("Tension batterie", gh("Au fil de la journée", "V") + tensionJour(b) +
-    gcap(`Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. ${/^\d/.test(b.absorptionDebut || "") ? `Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min` : "Absorption non atteinte"}${b.finCharge ? `, fin de charge ${b.finCharge}` : ""}.`) +
+    gcap(b.source === "shunt"
+      ? `Tension aux bornes de la batterie (shunt). Pointillé : consigne d’absorption du Gospower ${fr(b.consigneCV, 1)} V · rouge : 48 V. ${/^\d/.test(b.absorptionDebut || "") ? `Au-dessus de ${fr(b.seuilAbs, 1)} V : ${b.absorptionDuree_min} min dès ${b.absorptionDebut}` : `${fr(b.seuilAbs, 1)} V jamais atteints`}.`
+      : `Tension vue par le Gospower. Pointillé : consigne CV ${fr(b.consigneCV, 1)} V · rouge : 48 V. ${/^\d/.test(b.absorptionDebut || "") ? `Absorption ${b.absorptionDebut} pendant ${b.absorptionDuree_min} min` : "Absorption non atteinte"}${b.finCharge ? `, fin de charge ${b.finCharge}` : ""}.`) +
     sep(tiles([tile("Avant lever, veille", (sSp != null ? "" : "≈ ") + fr(sPrev), "%", "", sSp != null ? "SOC shunt à 06:00" : `${fr(alV.V, 2)} V à ${fr(alV.conso_kW, 2)} kW`), tile("Ce matin", (sS != null ? "" : "≈ ") + fr(sNow), "%", "ok", sS != null ? "SOC shunt à 06:00" : `${fr(alM.V, 2)} V · ${r.ceMatin.date}`)], 2)));
   if (sh) h += card("SmartShunt", tiles([tile("Chargé", fr(sh.charge, 1), "kWh", "ok", "toutes sources"), tile("Déchargé", fr(sh.decharge, 1), "kWh", "ac")], 2) +
     sep(gh("Qui a chargé la batterie") + pile([{ k: "PV1 + PV2 (Gospower)", v: e.battCharge, col: "acc", txt: fr(e.battCharge, 1) }, { k: "PV3 (Apollo)", v: sh.apollo || 0, col: "pv3", txt: sh.apollo != null ? fr(sh.apollo, 1) : "—" }])));
